@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environment
+.venv/
+
+# Environment
+.env
+
+# LangSmith / Local tracing
+Agents/config.py
+Agents/pipeline.py

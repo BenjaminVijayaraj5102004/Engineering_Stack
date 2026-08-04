@@ -1,0 +1,20 @@
+[project]
+name = "Engginer-stack"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "deepagents",
+    "fastapi>=0.141.1",
+    "langchain-mcp-adapters>=0.3.1",
+    "langchain-ollama>=1.1.0",
+    "langgraph>=1.2.10",
+    "langgraph-checkpoint-postgres>=3.1.1",
+    "mcp[cli]>=2.0.0",
+    "psycopg-pool>=3.3.1",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.14.2",
+    "python-dotenv>=1.2.2",
+    "uvicorn>=0.52.0",
+]
