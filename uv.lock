@@ -280,7 +280,7 @@ wheels = [
 ]
 
 [[package]]
-name = "engginer-stack"
+name = "engineering-stack"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

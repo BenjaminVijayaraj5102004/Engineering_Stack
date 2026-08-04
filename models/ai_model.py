@@ -7,7 +7,7 @@ class Models:
             self.model = model
             self.temperature = temperature
 
-models = Models("qwen3-coder:30b", 0.7)
+models = Models("qwen3-coder:30b", 0)
 models1 = Models("qwen2.5-coder:7b", 0.7)
 models2 = Models("llama3.1:8b", 0.7)
 
@@ -24,7 +24,7 @@ qwen_tool_ollama = ChatOllama(
 small_tool_ollama = ChatOllama(
     model=models.model,
     temperature=models.temperature,
+    num_ctx=32768,
 )
 
 
-print(models.model)
