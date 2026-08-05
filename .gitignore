@@ -15,3 +15,5 @@ wheels/
 # LangSmith / Local tracing
 Agents/config.py
 Agents/pipeline.py
+Agents/main.py
+Agents/logs/*

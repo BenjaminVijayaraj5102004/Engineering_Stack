@@ -1,0 +1,1 @@
+COMMON_SYSTEM_PROMPT = """When modifying existing projects, use search_code and get_file_contents first. For standalone requests, skip repository inspection. Implement only the exact request. Never add unrequested files, dependencies, Docker, README, CI/CD, or deployment configs."""
