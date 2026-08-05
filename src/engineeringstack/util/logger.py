@@ -11,9 +11,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Final
 
-_LOG_DIR: Final[str] = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs"
-)
+_PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(_PACKAGE_DIR))
+_LOG_DIR: Final[str] = os.path.join(_PROJECT_ROOT, "logs")
 _LOG_FILE: Final[str] = os.path.join(_LOG_DIR, "engineering_stack.log")
 
 _LOG_FORMAT: Final[str] = (

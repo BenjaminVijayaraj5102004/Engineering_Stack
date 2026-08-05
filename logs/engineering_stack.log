@@ -122,3 +122,58 @@
 2026-08-05 15:49:21 | INFO     | redis.<module>:12 | Initializing Redis Agent
 2026-08-05 15:49:21 | INFO     | databasemanager.<module>:8 | Initializing Database Manager
 2026-08-05 15:49:22 | INFO     | code_review.<module>:13 | Initializing Code Reviewer Agent
+2026-08-05 17:16:32 | INFO     | rest.<module>:10 | Initializing REST Agent
+2026-08-05 17:16:32 | INFO     | rest.<module>:18 | REST Agent initialized successfully
+2026-08-05 17:16:32 | INFO     | graphql.<module>:10 | Initializing GraphQL Agent
+2026-08-05 17:16:32 | INFO     | grpc.<module>:10 | Initializing gRPC Agent
+2026-08-05 17:16:32 | INFO     | soap.<module>:10 | Initializing SOAP Agent
+2026-08-05 17:16:32 | INFO     | apimanager.<module>:7 | Initializing API Manager
+2026-08-05 17:16:32 | INFO     | rdms.<module>:10 | Initializing RDMS Agent
+2026-08-05 17:16:32 | INFO     | nosql.<module>:10 | Initializing NoSQL Agent
+2026-08-05 17:16:32 | INFO     | redis.<module>:10 | Initializing Redis Agent
+2026-08-05 17:16:32 | INFO     | databasemanager.<module>:7 | Initializing Database Manager
+2026-08-05 17:16:32 | INFO     | code_review.<module>:9 | Initializing Code Reviewer Agent
+2026-08-05 17:16:44 | INFO     | rest.<module>:10 | Initializing REST Agent
+2026-08-05 17:16:44 | INFO     | rest.<module>:18 | REST Agent initialized successfully
+2026-08-05 17:16:44 | INFO     | graphql.<module>:10 | Initializing GraphQL Agent
+2026-08-05 17:16:44 | INFO     | grpc.<module>:10 | Initializing gRPC Agent
+2026-08-05 17:16:44 | INFO     | soap.<module>:10 | Initializing SOAP Agent
+2026-08-05 17:16:44 | INFO     | apimanager.<module>:7 | Initializing API Manager
+2026-08-05 17:16:44 | INFO     | rdms.<module>:10 | Initializing RDMS Agent
+2026-08-05 17:16:44 | INFO     | nosql.<module>:10 | Initializing NoSQL Agent
+2026-08-05 17:16:44 | INFO     | redis.<module>:10 | Initializing Redis Agent
+2026-08-05 17:16:44 | INFO     | databasemanager.<module>:7 | Initializing Database Manager
+2026-08-05 17:16:44 | INFO     | code_review.<module>:9 | Initializing Code Reviewer Agent
+2026-08-05 17:17:09 | INFO     | rest.<module>:10 | Initializing REST Agent
+2026-08-05 17:17:09 | INFO     | rest.<module>:18 | REST Agent initialized successfully
+2026-08-05 17:17:09 | INFO     | graphql.<module>:10 | Initializing GraphQL Agent
+2026-08-05 17:17:09 | INFO     | grpc.<module>:10 | Initializing gRPC Agent
+2026-08-05 17:17:09 | INFO     | soap.<module>:10 | Initializing SOAP Agent
+2026-08-05 17:17:09 | INFO     | apimanager.<module>:7 | Initializing API Manager
+2026-08-05 17:17:09 | INFO     | rdms.<module>:10 | Initializing RDMS Agent
+2026-08-05 17:17:09 | INFO     | nosql.<module>:10 | Initializing NoSQL Agent
+2026-08-05 17:17:09 | INFO     | redis.<module>:10 | Initializing Redis Agent
+2026-08-05 17:17:09 | INFO     | databasemanager.<module>:7 | Initializing Database Manager
+2026-08-05 17:17:09 | INFO     | code_review.<module>:9 | Initializing Code Reviewer Agent
+2026-08-05 17:17:36 | INFO     | rest.<module>:10 | Initializing REST Agent
+2026-08-05 17:17:36 | INFO     | rest.<module>:18 | REST Agent initialized successfully
+2026-08-05 17:17:36 | INFO     | graphql.<module>:10 | Initializing GraphQL Agent
+2026-08-05 17:17:36 | INFO     | grpc.<module>:10 | Initializing gRPC Agent
+2026-08-05 17:17:36 | INFO     | soap.<module>:10 | Initializing SOAP Agent
+2026-08-05 17:17:36 | INFO     | apimanager.<module>:7 | Initializing API Manager
+2026-08-05 17:17:36 | INFO     | rdms.<module>:10 | Initializing RDMS Agent
+2026-08-05 17:17:36 | INFO     | nosql.<module>:10 | Initializing NoSQL Agent
+2026-08-05 17:17:36 | INFO     | redis.<module>:10 | Initializing Redis Agent
+2026-08-05 17:17:36 | INFO     | databasemanager.<module>:7 | Initializing Database Manager
+2026-08-05 17:17:37 | INFO     | code_review.<module>:9 | Initializing Code Reviewer Agent
+2026-08-05 17:18:13 | INFO     | rest.<module>:10 | Initializing REST Agent
+2026-08-05 17:18:13 | INFO     | rest.<module>:18 | REST Agent initialized successfully
+2026-08-05 17:18:13 | INFO     | graphql.<module>:10 | Initializing GraphQL Agent
+2026-08-05 17:18:13 | INFO     | grpc.<module>:10 | Initializing gRPC Agent
+2026-08-05 17:18:13 | INFO     | soap.<module>:10 | Initializing SOAP Agent
+2026-08-05 17:18:13 | INFO     | apimanager.<module>:7 | Initializing API Manager
+2026-08-05 17:18:13 | INFO     | rdms.<module>:10 | Initializing RDMS Agent
+2026-08-05 17:18:13 | INFO     | nosql.<module>:10 | Initializing NoSQL Agent
+2026-08-05 17:18:13 | INFO     | redis.<module>:10 | Initializing Redis Agent
+2026-08-05 17:18:13 | INFO     | databasemanager.<module>:7 | Initializing Database Manager
+2026-08-05 17:18:13 | INFO     | code_review.<module>:9 | Initializing Code Reviewer Agent

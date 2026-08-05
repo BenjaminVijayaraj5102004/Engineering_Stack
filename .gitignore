@@ -12,8 +12,10 @@ wheels/
 # Environment
 .env
 
-# LangSmith / Local tracing
-Agents/config.py
-Agents/pipeline.py
-Agents/main.py
-Agents/logs/*
+# Logs & Traces
+logs/
+*.log
+*.trace
+.trace/
+src/engineeringstack/logs/
+
