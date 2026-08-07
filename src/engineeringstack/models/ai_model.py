@@ -1,30 +1,40 @@
-"""Ollama Model configurations for engineeringstack."""
+from typing import Optional, Union
+from langchain.chat_models import init_chat_model
+from langchain_core.language_models.chat_models import BaseChatModel
 
-from langchain_ollama import ChatOllama
-
-
-class Models:
-    def __init__(self, model: str, temperature: float):
-        self.model = model
-        self.temperature = temperature
+DEFAULT_MODEL_NAME = "ollama:qwen3-coder:30b"
 
 
-models = Models("qwen3-coder:30b", 0)
-models1 = Models("qwen2.5-coder:7b", 0.7)
-models2 = Models("llama3.1:8b", 0.7)
+def build_chat_model(
+    model: Optional[Union[str, BaseChatModel]] = None,
+    **kwargs,
+) -> BaseChatModel:
+    """
+    Build a LangChain chat model.
 
-general_model = ChatOllama(
-    model=models2.model,
-    temperature=models2.temperature,
-)
+    Args:
+        model: Optional model string (e.g. "ollama:qwen3-coder:30b", "openai:gpt-4o"),
+               or a pre-configured BaseChatModel instance. If None, uses DEFAULT_MODEL_NAME.
+        **kwargs: Additional parameters passed to init_chat_model.
 
-qwen_tool_ollama = ChatOllama(
-    model=models1.model,
-    temperature=models1.temperature,
-)
+    Examples:
+        build_chat_model()
+        build_chat_model("ollama:qwen3-coder:30b")
+        build_chat_model("openai:gpt-4o")
+        build_chat_model(ChatOpenAI(...))
+    """
+    if model is None:
+        model = DEFAULT_MODEL_NAME
 
-small_tool_ollama = ChatOllama(
-    model=models.model,
-    temperature=models.temperature,
-    num_ctx=32768,
-)
+    if isinstance(model, BaseChatModel):
+        return model
+
+    return init_chat_model(model=model, **kwargs)
+
+
+# Pre-defined default models for backwards compatibility and easy reference
+qwen_tool_ollama = build_chat_model(DEFAULT_MODEL_NAME)
+small_tool_ollama = qwen_tool_ollama
+general_model = qwen_tool_ollama
+
+

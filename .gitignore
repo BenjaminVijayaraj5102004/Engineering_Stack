@@ -1,21 +1,29 @@
-# Python
-__pycache__/
-*.py[cod]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environment
-.venv/
-
-# Environment
+# Environment files
 .env
+.env.local
+.env.*.local
+!.env.example
 
-# Logs & Traces
+# Logs & LangSmith Traces
 logs/
 *.log
 *.trace
+*.trc
 .trace/
-src/engineeringstack/logs/
+traces/
+.langchain/
+.langsmith/
+langsmith_traces/
+.langsmith_traces/
 
+# Python & Build artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+
+# Agent main
+src/engineeringstack/agents/main/
