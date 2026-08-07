@@ -12,7 +12,6 @@ logger = get_logger(__name__)
 def code_review_subagent(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
-    response_format: Optional[Any] = AIOutput,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Build the Code Reviewer subagent dictionary dynamically with custom model support."""
@@ -21,19 +20,20 @@ def code_review_subagent(
     code_review_agent = create_deep_agent(
         model=selected_model,
         system_prompt=CODE_REVIEW_SYSTEM_PROMPT,
-        response_format=response_format,
+    
         checkpointer=checkpointer,
     )
+    logger.info(f"Selected model: {selected_model}")
+    logger.info(f"Model class: {type(selected_model)}")
     return {
         "name": "Code_Reviewer",
         "description": "Reviews existing code only. Never implements features, creates files, or delegates tasks.",
         "system_prompt": CODE_REVIEW_SYSTEM_PROMPT,
-        "response_format": response_format,
+
         "runnable": code_review_agent,
     }
 
 
-    logger.info(f"Selected model: {selected_model}")
-    logger.info(f"Model class: {type(selected_model)}")
-    logger.info(f"Response format: {response_format}")
+    
+
     

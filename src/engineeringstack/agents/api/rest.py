@@ -24,6 +24,7 @@ def rest_subagent(
         system_prompt=REST_SYSTEM_PROMPT,
         checkpointer=checkpointer,
     )
+    logger.info("REST model: %s", selected_model.model_name)
     logger.info("REST Agent initialized successfully")
 
     return {
