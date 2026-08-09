@@ -30,3 +30,9 @@ dist/
 
 # Agent main
 src/engineeringstack/agents/main/
+
+# Memory & Agent Guidelines
+memory/
+memories/
+.claude/
+

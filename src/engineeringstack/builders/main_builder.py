@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, FilesystemBackend, StateBackend, StoreBackend
+from langgraph.store.memory import InMemoryStore
 from ..models.ai_model import build_chat_model
 from ..prompts.main_agent_prompt import MAIN_AGENT_SYSTEM_PROMPT
 from ..agents.managers.apimanager import api_manager_subagent
@@ -25,6 +26,7 @@ def _default_user_namespace(rt: Any) -> tuple[str, ...]:
 def build_default_backend(
     local_memory_dir: Optional[Union[str, Path]] = None,
     local_skills_dir: Optional[Union[str, Path]] = None,
+    store: Optional[Any] = None,
 ) -> CompositeBackend:
     """Builds a composite backend: uses FilesystemBackend if local dir provided, else StoreBackend."""
     routes: dict[str, Any] = {}
@@ -34,14 +36,14 @@ def build_default_backend(
         Path(local_memory_dir).mkdir(parents=True, exist_ok=True)
         routes["/memories/"] = FilesystemBackend(root_dir=str(local_memory_dir))
     else:
-        routes["/memories/"] = StoreBackend(namespace=_default_user_namespace)
+        routes["/memories/"] = StoreBackend(store=store, namespace=_default_user_namespace)
 
     # /skills/ route: Local disk if specified, else StoreBackend
     if local_skills_dir is not None:
         Path(local_skills_dir).mkdir(parents=True, exist_ok=True)
         routes["/skills/"] = FilesystemBackend(root_dir=str(local_skills_dir))
     else:
-        routes["/skills/"] = StoreBackend(namespace=_default_user_namespace)
+        routes["/skills/"] = StoreBackend(store=store, namespace=_default_user_namespace)
 
     return CompositeBackend(
         default=StateBackend(),
@@ -60,12 +62,14 @@ def build_main_agent(
     store: Optional[Any] = None,
 ):
     selected_model = build_chat_model(model=model)
+    resolved_store = store if store is not None else InMemoryStore()
 
     # 1. Resolve Backend: Custom Backend > Local Directory Routes > Default Virtual Backend
     if backend is None:
         backend = build_default_backend(
             local_memory_dir=local_memory_dir,
             local_skills_dir=local_skills_dir,
+            store=resolved_store,
         )
 
     # 2. Resolve Memory & Skills: User custom list > SDK default
@@ -79,7 +83,7 @@ def build_main_agent(
         backend=backend,
         memory=resolved_memory,
         skills=resolved_skills,
-        store=store,
+        store=resolved_store,
         subagents=[
             database_manager_subagent(
                 model=selected_model,
@@ -96,3 +100,4 @@ def build_main_agent(
         ],
         checkpointer=checkpointer,
     )
+
