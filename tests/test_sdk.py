@@ -1,13 +1,62 @@
+"""Unit tests for the EngineeringStack public Python SDK.
+
+Follows TDD Workflow:
+- Tests public exports and boundary isolation
+- Tests synchronous invoke, streaming, async streaming, and batch execution using AAA pattern
+"""
+
+import asyncio
 import unittest
 import engineeringstack
+from engineeringstack.schema.state import UserInput, AIOutput
+
+
+class MockAgent:
+    """Test double implementing LangGraph-like agent interface for fast unit tests."""
+
+    def invoke(self, payload, config=None, **kwargs):
+        thread_id = config.get("configurable", {}).get("thread_id", "default_thread")
+        return {
+            "messages": [
+                {"role": "user", "content": payload["messages"][0]["content"]},
+                {
+                    "role": "assistant",
+                    "content": (
+                        "Generated implementation:\n\n"
+                        "```python\ndef handler():\n    return {'status': 'ok'}\n```\n\n"
+                        "- 1. Validated user requirements\n"
+                        "- 2. Initialized database schema\n"
+                        "- 3. Built REST router\n"
+                        "- 4. Applied security middleware\n"
+                        "- 5. Verified with unit tests\n"
+                    ),
+                },
+            ]
+        }
+
+    def stream(self, payload, config=None, **kwargs):
+        yield {"chunk": 1, "messages": [{"role": "assistant", "content": "chunk 1"}]}
+        yield {"chunk": 2, "messages": [{"role": "assistant", "content": "chunk 2"}]}
+
+    async def astream(self, payload, config=None, **kwargs):
+        yield {"chunk": 1, "messages": [{"role": "assistant", "content": "async chunk 1"}]}
+        yield {"chunk": 2, "messages": [{"role": "assistant", "content": "async chunk 2"}]}
 
 
 class TestEngineeringStackSDK(unittest.TestCase):
+    """Test suite for EngineeringStack SDK entrypoint."""
 
     def test_public_api_exports(self):
         """Ensure top level package exports strictly allowed symbols."""
         exported = set(engineeringstack.__all__)
-        expected = {"EngineeringStack", "create_engineering_stack", "__version__"}
+        expected = {
+            "EngineeringStack",
+            "create_engineering_stack",
+            "UserInput",
+            "MainAgentOutput",
+            "AIOutput",
+            "__version__",
+        }
         self.assertEqual(exported, expected, f"Unexpected exports in __all__: {exported}")
 
     def test_private_modules_not_in_all(self):
@@ -28,45 +77,142 @@ class TestEngineeringStackSDK(unittest.TestCase):
         for module in forbidden:
             self.assertNotIn(module, engineeringstack.__all__, f"{module} leaked into __all__!")
 
-    def test_sdk_instantiation_mock(self):
-        """Test SDK class and factory instantiation without triggering real LLM network calls."""
-        class DummyAgent:
-            def invoke(self, payload, config=None, **kwargs):
-                return {"messages": [{"role": "assistant", "content": "mock response"}]}
+    def test_sdk_instantiation_and_invoke_happy_path(self):
+        """Arrange-Act-Assert: Invoke returns complete structured payload."""
+        # Arrange
+        mock_agent = MockAgent()
+        stack = engineeringstack.EngineeringStack(agent=mock_agent)
 
-            def stream(self, payload, config=None, **kwargs):
-                yield {"messages": [{"role": "assistant", "content": "mock chunk"}]}
+        # Act
+        result = stack.invoke("Build a payment API")
 
-            async def astream(self, payload, config=None, **kwargs):
-                yield {"messages": [{"role": "assistant", "content": "mock chunk"}]}
+        # Assert
+        self.assertIn("thread_id", result)
+        self.assertIsInstance(result["user_input"], UserInput)
+        self.assertEqual(result["user_input"].query, "Build a payment API")
+        self.assertEqual(len(result["messages"]), 2)
+        self.assertIn("def handler():", result["final_answer"])
+        self.assertIsInstance(result["ai_output"], AIOutput)
+        self.assertEqual(len(result["ai_output"].summary), 5)
+        self.assertIn("def handler():", result["ai_output"].code)
 
-            def batch(self, payloads, **kwargs):
-                return [{"messages": [{"role": "assistant", "content": "mock batch"}]} for _ in payloads]
+    def test_factory_function_instantiation(self):
+        """Arrange-Act-Assert: create_engineering_stack factory produces functional instance."""
+        # Arrange
+        mock_agent = MockAgent()
+        stack = engineeringstack.create_engineering_stack(agent=mock_agent)
 
-        dummy_agent = DummyAgent()
+        # Act
+        result = stack.invoke("Build user service")
 
-        # Class-based usage
-        stack = engineeringstack.EngineeringStack(agent=dummy_agent)
-        res = stack.invoke("Hello test")
-        self.assertEqual(res["messages"][-1]["content"], "mock response")
+        # Assert
+        self.assertIsInstance(stack, engineeringstack.EngineeringStack)
+        self.assertEqual(result["user_input"].query, "Build user service")
 
-        # Factory function usage
-        stack_factory = engineeringstack.create_engineering_stack(agent=dummy_agent)
-        res_factory = stack_factory.invoke("Hello factory test")
-        self.assertEqual(res_factory["messages"][-1]["content"], "mock response")
+    def test_custom_thread_id_persistence(self):
+        """Arrange-Act-Assert: Custom thread_id is respected and returned."""
+        # Arrange
+        custom_id = "test-thread-uuid-1234"
+        stack = engineeringstack.EngineeringStack(agent=MockAgent())
+
+        # Act
+        result = stack.invoke("Test query", thread_id=custom_id)
+
+        # Assert
+        self.assertEqual(result["thread_id"], custom_id)
 
     def test_batch_execution_mock(self):
-        """Test batch invocation."""
-        class DummyAgent:
-            def batch(self, payloads, **kwargs):
-                return [{"messages": [{"role": "assistant", "content": f"res_{i}"}]} for i, _ in enumerate(payloads)]
+        """Arrange-Act-Assert: Batch processes list of inputs into list of results."""
+        # Arrange
+        stack = engineeringstack.EngineeringStack(agent=MockAgent())
+        queries = ["Create Auth API", "Create Billing API"]
 
-        stack = engineeringstack.EngineeringStack(agent=DummyAgent())
-        results = stack.batch(["q1", "q2"])
+        # Act
+        results = stack.batch(queries)
+
+        # Assert
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0]["messages"][-1]["content"], "res_0")
-        self.assertEqual(results[1]["messages"][-1]["content"], "res_1")
+        self.assertEqual(results[0]["user_input"].query, "Create Auth API")
+        self.assertEqual(results[1]["user_input"].query, "Create Billing API")
+
+    def test_stream_generator(self):
+        """Arrange-Act-Assert: Stream yields chunks from underlying agent."""
+        # Arrange
+        stack = engineeringstack.EngineeringStack(agent=MockAgent())
+
+        # Act
+        chunks = list(stack.stream("Stream test query"))
+
+        # Assert
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["chunk"], 1)
+        self.assertEqual(chunks[1]["chunk"], 2)
+
+    def test_astream_async_generator(self):
+        """Arrange-Act-Assert: astream yields chunks asynchronously."""
+        # Arrange
+        stack = engineeringstack.EngineeringStack(agent=MockAgent())
+
+        # Act
+        async def collect_chunks():
+            results = []
+            async for chunk in stack.astream("Async test query"):
+                results.append(chunk)
+            return results
+
+        chunks = asyncio.run(collect_chunks())
+
+        # Assert
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["messages"][0]["content"], "async chunk 1")
+
+    def test_sdk_init_with_memory_skills_and_local_dirs(self):
+        """Arrange-Act-Assert: Memory, skills, local dirs, and store are stored on instance."""
+        # Arrange & Act
+        stack = engineeringstack.EngineeringStack(
+            agent=MockAgent(),
+            memory=["/memories/custom.md"],
+            skills=["/skills/custom/"],
+            local_memory_dir="./mem_test",
+            local_skills_dir="./skills_test",
+            store="dummy_store",
+        )
+
+        # Assert
+        self.assertEqual(stack.memory, ["/memories/custom.md"])
+        self.assertEqual(stack.skills, ["/skills/custom/"])
+        self.assertEqual(stack.local_memory_dir, "./mem_test")
+        self.assertEqual(stack.local_skills_dir, "./skills_test")
+        self.assertEqual(stack.store, "dummy_store")
+
+    def test_factory_with_memory_skills_and_local_dirs(self):
+        """Arrange-Act-Assert: create_engineering_stack forwards memory and skills configuration."""
+        # Arrange & Act
+        stack = engineeringstack.create_engineering_stack(
+            agent=MockAgent(),
+            memory=["/memories/custom.md"],
+            skill=["/skills/singular/"],
+        )
+
+        # Assert
+        self.assertEqual(stack.memory, ["/memories/custom.md"])
+        self.assertEqual(stack.skills, ["/skills/singular/"])
+
+    def test_sdk_invoke_exception_propagates(self):
+        """Arrange-Act-Assert: Agent execution errors propagate with clear stacktrace."""
+        # Arrange
+        class FailingAgent:
+            def invoke(self, *args, **kwargs):
+                raise RuntimeError("Graph execution failed unexpectedly")
+
+        stack = engineeringstack.EngineeringStack(agent=FailingAgent())
+
+        # Act & Assert
+        with self.assertRaises(RuntimeError) as ctx:
+            stack.invoke("Trigger failure")
+        self.assertIn("Graph execution failed unexpectedly", str(ctx.exception))
 
 
 if __name__ == "__main__":
     unittest.main()
+

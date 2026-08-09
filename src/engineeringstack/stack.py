@@ -1,10 +1,11 @@
+from pathlib import Path
 import re
 from typing import Any, AsyncGenerator, Generator, Optional, Union
 import uuid
 from .models.ai_model import build_chat_model
 from .builders.main_builder import build_main_agent
 from .schema.state import UserInput, AIOutput
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 
 class EngineeringStack:
@@ -22,21 +23,46 @@ class EngineeringStack:
         model: Optional[Any] = None,
         backend: Optional[Any] = None,
         agent: Optional[Any] = None,
+        memory: Optional[list[str]] = None,
+        skills: Optional[list[str]] = None,
+        skill: Optional[Any] = None,
+        local_memory_dir: Optional[Union[str, Path]] = None,
+        local_skills_dir: Optional[Union[str, Path]] = None,
+        store: Optional[Any] = None,
     ):
         """Initialize the EngineeringStack instance.
 
         Args:
-            model: Optional custom LLM model instance.
-            backend: Optional backend provider/configuration.
+            model: Optional custom LLM model instance or model name string.
+            backend: Optional backend provider/configuration override.
             agent: Optional pre-built agent graph override.
+            memory: Optional list of virtual memory paths (defaults to ['/memories/AGENTS.md']).
+            skills: Optional list of skill directory paths (defaults to ['/skills/']).
+            skill: Alias for skills for convenience.
+            local_memory_dir: Optional local directory path for saving memories directly to disk.
+            local_skills_dir: Optional local directory path for loading skills directly from disk.
+            store: Optional LangGraph BaseStore instance (e.g. InMemoryStore or PostgresStore).
         """
         self.model = build_chat_model(model=model)
         self.backend = backend
+        self.memory = memory
+        self.skills = skills if skills is not None else skill
+        self.local_memory_dir = local_memory_dir
+        self.local_skills_dir = local_skills_dir
+        self.store = store
+
         if agent is not None:
             self.agent = agent
         else:
-            self.agent = build_main_agent(model=self.model, backend=self.backend)
-
+            self.agent = build_main_agent(
+                model=self.model,
+                backend=self.backend,
+                memory=self.memory,
+                skills=self.skills,
+                local_memory_dir=self.local_memory_dir,
+                local_skills_dir=self.local_skills_dir,
+                store=self.store,
+            )
     def _normalize_input(self, input_data: Any) -> tuple[UserInput, dict[str, Any]]:
         """Normalize input data into a UserInput schema and a graph state dict."""
         if isinstance(input_data, UserInput):
@@ -47,12 +73,22 @@ class EngineeringStack:
             if "query" in input_data:
                 user_input = UserInput(**input_data)
             elif "messages" in input_data and input_data["messages"]:
-                first_msg = input_data["messages"][0]
-                if isinstance(first_msg, dict):
-                    content = first_msg.get("content", str(first_msg))
-                else:
-                    content = getattr(first_msg, "content", str(first_msg))
-                user_input = UserInput(query=str(content))
+                msgs = input_data["messages"]
+                formatted_msgs = []
+                last_user_content = ""
+                for msg in msgs:
+                    if isinstance(msg, dict):
+                        role = msg.get("role", "user")
+                        content = msg.get("content", str(msg))
+                    else:
+                        role = "user" if isinstance(msg, HumanMessage) else "assistant"
+                        content = getattr(msg, "content", str(msg))
+                    formatted_msgs.append({"role": role, "content": str(content)})
+                    if role == "user":
+                        last_user_content = str(content)
+                user_input = UserInput(query=last_user_content or "User request")
+                payload = {"messages": formatted_msgs}
+                return user_input, payload
             else:
                 user_input = UserInput(query=str(input_data))
         else:
@@ -83,14 +119,13 @@ class EngineeringStack:
         """Parse execution output messages into structured AIOutput format."""
         final_text = self._extract_final_answer(messages)
 
-        # Extract code block(s) if present
         code_blocks = re.findall(r"```(?:\w+)?\n(.*?)```", final_text, re.DOTALL)
         if code_blocks:
             code_content = "\n\n".join(cb.strip() for cb in code_blocks)
         else:
             code_content = final_text.strip()
 
-        # Extract summary bullet points
+
         bullets: list[str] = []
         for line in final_text.splitlines():
             line_str = line.strip()
@@ -101,7 +136,7 @@ class EngineeringStack:
                 if cleaned and cleaned not in bullets:
                     bullets.append(cleaned)
 
-        # Ensure exactly 5 concise summary bullet points
+ 
         fallback_bullets = [
             "Parsed and extracted UserInput specification.",
             "Routed task through Main Agent and specialized Manager.",
@@ -203,7 +238,24 @@ def create_engineering_stack(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
     agent: Optional[Any] = None,
+    memory: Optional[list[str]] = None,
+    skills: Optional[list[str]] = None,
+    skill: Optional[Any] = None,
+    local_memory_dir: Optional[Union[str, Path]] = None,
+    local_skills_dir: Optional[Union[str, Path]] = None,
+    store: Optional[Any] = None,
 ) -> EngineeringStack:
     """Factory function to create an EngineeringStack instance."""
-    return EngineeringStack(model=model, backend=backend, agent=agent)
+    return EngineeringStack(
+        model=model,
+        backend=backend,
+        agent=agent,
+        memory=memory,
+        skills=skills,
+        skill=skill,
+        local_memory_dir=local_memory_dir,
+        local_skills_dir=local_skills_dir,
+        store=store,
+    )
+
 

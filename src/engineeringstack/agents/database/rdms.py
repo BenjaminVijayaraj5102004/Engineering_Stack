@@ -20,7 +20,7 @@ def rdms_subagent(
     selected_model = build_chat_model(model=model)
     rdms_agent = create_deep_agent(
         model=selected_model,
-        tools=[search_code, get_file_contents],
+        tools=[search_code],
         system_prompt=RDMS_SYSTEM_PROMPT,
         checkpointer=checkpointer,
     )

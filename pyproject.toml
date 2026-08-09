@@ -1,14 +1,34 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "engineeringstack"
-version = "0.1.0"
-description = "LangGraph hierarchical multi-agent engineering stack SDK package"
+version = "0.1.2"
+description = "LangGraph hierarchical multi-agent engineering stack SDK"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.12"
+authors = [
+    { name = "Engineering Stack Team" }
+]
+keywords = [
+    "langgraph",
+    "deepagents",
+    "multi-agent",
+    "ai",
+    "engineering",
+    "llm",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "deepagents",
     "fastapi>=0.141.1",
@@ -23,8 +43,24 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",
     "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0.51",
     "uvicorn>=0.52.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/engineering-stack/engineeringstack"
+Documentation = "https://github.com/engineering-stack/engineeringstack#readme"
+Repository = "https://github.com/engineering-stack/engineeringstack.git"
+Issues = "https://github.com/engineering-stack/engineeringstack/issues"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+engineeringstack = ["py.typed"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+

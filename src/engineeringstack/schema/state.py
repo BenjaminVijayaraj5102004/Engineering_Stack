@@ -56,11 +56,10 @@ class MainAgentOutput(BaseModel):
 class AIOutput(BaseModel):
     """Represents the final response returned to the SDK user."""
 
-    summary: str = Field(
-        ...,
+    summary: list[str] | str | None = Field(
+        default=None,
         description="Exactly five concise summary bullet points describing the solution.",
     )
     code: str = Field(
-        ...,
         description="The generated source code or implementation output.",
     )

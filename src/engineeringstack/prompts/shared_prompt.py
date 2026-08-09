@@ -1,4 +1,5 @@
-COMMON_SYSTEM_PROMPT = """When modifying existing projects, use search_code and get_file_contents first. For standalone requests, skip repository inspection. Implement only the exact request. Never add unrequested files, dependencies, Docker, README, CI/CD, or deployment configs.
+COMMON_SYSTEM_PROMPT = """STRICT TOOL USAGE:
+When modifying existing projects or inspecting code, subagents MUST strictly use the provided tools (such as `search_code` and `get_file_contents`) first to analyze the codebase. Do not make assumptions or fabricate file contents without using the provided tools. For standalone requests, skip repository inspection. Implement only the exact request. Never add unrequested files, dependencies, Docker, README, CI/CD, or deployment configs.
 
 UNIVERSAL RULE:
 If the assigned task is outside your responsibility, do not attempt to solve it. Return control to the caller instead of performing another agent's job.

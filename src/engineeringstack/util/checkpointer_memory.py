@@ -11,6 +11,7 @@ if settings.DATABASE_URL:
         pool = ConnectionPool(
             conninfo=settings.DATABASE_URL,
             max_size=20,
+            open=True,
             kwargs={"autocommit": True},
         )
         checkpointer = PostgresSaver(pool)
