@@ -6,6 +6,7 @@ from .models.ai_model import build_chat_model
 from .builders.main_builder import build_main_agent
 from .schema.state import UserInput, AIOutput
 from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.store.memory import InMemoryStore
 
 
 class EngineeringStack:
@@ -26,6 +27,7 @@ class EngineeringStack:
         memory: Optional[list[str]] = None,
         skills: Optional[list[str]] = None,
         skill: Optional[Any] = None,
+        tools: Optional[list[Any]] = None,
         local_memory_dir: Optional[Union[str, Path]] = None,
         local_skills_dir: Optional[Union[str, Path]] = None,
         store: Optional[Any] = None,
@@ -39,17 +41,19 @@ class EngineeringStack:
             memory: Optional list of virtual memory paths (defaults to ['/memories/AGENTS.md']).
             skills: Optional list of skill directory paths (defaults to ['/skills/']).
             skill: Alias for skills for convenience.
+            tools: Optional list of custom tools (defaults to helper intent & routing tools).
             local_memory_dir: Optional local directory path for saving memories directly to disk.
             local_skills_dir: Optional local directory path for loading skills directly from disk.
             store: Optional LangGraph BaseStore instance (e.g. InMemoryStore or PostgresStore).
         """
         self.model = build_chat_model(model=model)
         self.backend = backend
-        self.memory = memory
-        self.skills = skills if skills is not None else skill
+        self.memory = memory if memory is not None else [ "/memories/preferences.md", "/memories/AGENTS.md"]
+        self.skills = skills if skills is not None else (skill if skill is not None else ["/skills/"])
+        self.tools = tools
         self.local_memory_dir = local_memory_dir
         self.local_skills_dir = local_skills_dir
-        self.store = store
+        self.store = store if store is not None else InMemoryStore()
 
         if agent is not None:
             self.agent = agent
@@ -59,6 +63,7 @@ class EngineeringStack:
                 backend=self.backend,
                 memory=self.memory,
                 skills=self.skills,
+                tools=self.tools,
                 local_memory_dir=self.local_memory_dir,
                 local_skills_dir=self.local_skills_dir,
                 store=self.store,
@@ -168,12 +173,12 @@ class EngineeringStack:
         Returns:
             Dict containing thread_id, user_input, messages, final_answer, and ai_output.
         """
-        if thread_id is None:
-            thread_id = str(uuid.uuid4())
-
-        user_input, payload = self._normalize_input(input_data)
         config = kwargs.pop("config", {})
         configurable = config.get("configurable", {})
+        if thread_id is None:
+            thread_id = configurable.get("thread_id", str(uuid.uuid4()))
+
+        user_input, payload = self._normalize_input(input_data)
         configurable["thread_id"] = thread_id
         config["configurable"] = configurable
 
@@ -195,12 +200,12 @@ class EngineeringStack:
         **kwargs: Any,
     ) -> Generator[Any, None, None]:
         """Stream response chunks from the agent workflow synchronously."""
-        if thread_id is None:
-            thread_id = str(uuid.uuid4())
-
-        _, payload = self._normalize_input(input_data)
         config = kwargs.pop("config", {})
         configurable = config.get("configurable", {})
+        if thread_id is None:
+            thread_id = configurable.get("thread_id", str(uuid.uuid4()))
+
+        _, payload = self._normalize_input(input_data)
         configurable["thread_id"] = thread_id
         config["configurable"] = configurable
 
@@ -213,12 +218,12 @@ class EngineeringStack:
         **kwargs: Any,
     ) -> AsyncGenerator[Any, None]:
         """Stream response chunks from the agent workflow asynchronously."""
-        if thread_id is None:
-            thread_id = str(uuid.uuid4())
-
-        _, payload = self._normalize_input(input_data)
         config = kwargs.pop("config", {})
         configurable = config.get("configurable", {})
+        if thread_id is None:
+            thread_id = configurable.get("thread_id", str(uuid.uuid4()))
+
+        _, payload = self._normalize_input(input_data)
         configurable["thread_id"] = thread_id
         config["configurable"] = configurable
 
@@ -241,6 +246,7 @@ def create_engineering_stack(
     memory: Optional[list[str]] = None,
     skills: Optional[list[str]] = None,
     skill: Optional[Any] = None,
+    tools: Optional[list[Any]] = None,
     local_memory_dir: Optional[Union[str, Path]] = None,
     local_skills_dir: Optional[Union[str, Path]] = None,
     store: Optional[Any] = None,
@@ -253,6 +259,7 @@ def create_engineering_stack(
         memory=memory,
         skills=skills,
         skill=skill,
+        tools=tools,
         local_memory_dir=local_memory_dir,
         local_skills_dir=local_skills_dir,
         store=store,

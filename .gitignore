@@ -1,13 +1,29 @@
+# Claude & Agent skills
+.claude/
+.agents/
+.claude\skills
 # Environment files
 .env
 .env.local
 .env.*.local
 !.env.example
 
-# Logs & LangSmith Traces
+# Python & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Logs & Traces
 logs/
 *.log
-*.log.*
 *.trace
 *.trc
 .trace/
@@ -16,23 +32,8 @@ traces/
 .langsmith/
 langsmith_traces/
 .langsmith_traces/
-*.events
-*.out
 
-# Python & Build artifacts
-__pycache__/
-*.pyc
-*.egg-info/
-build/
-dist/
-.venv/
-.pytest_cache/
-
-# Agent main
-src/engineeringstack/agents/main/
-
-# Memory & Agent Guidelines
+# Project Memory & Examples
 memory/
 memories/
-.claude/
-
+examples/main_agent.py

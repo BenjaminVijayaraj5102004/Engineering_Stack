@@ -18,6 +18,15 @@ from engineeringstack.agents.api.grpc import grpc_subagent
 from engineeringstack.agents.api.soap import soap_subagent
 
 
+from engineeringstack.builders.main_builder import (
+    build_main_agent,
+    evaluate_main_agent_input,
+    get_helper_agents,
+)
+from engineeringstack.prompts.main_agent_prompt import MAIN_AGENT_SYSTEM_PROMPT
+from engineeringstack.util.helper import RouteAction, IntentType
+
+
 class TestSubAgentBuilders(unittest.TestCase):
     """Test suite for domain specialist and manager subagent definitions."""
 
@@ -87,7 +96,39 @@ class TestSubAgentBuilders(unittest.TestCase):
         self.assertEqual(soap["name"], "SOAP_Agent")
         self.assertTrue(hasattr(soap["runnable"], "invoke"))
 
+    def test_get_helper_agents(self):
+        """Arrange-Act-Assert: get_helper_agents returns all 3 helper subagents."""
+        helpers = get_helper_agents()
+        self.assertEqual(len(helpers), 3)
+        names = {h["name"] for h in helpers}
+        self.assertEqual(names, {"Database_Manager", "API_Manager", "Code_Reviewer"})
+
+    def test_evaluate_main_agent_input_greeting(self):
+        """Arrange-Act-Assert: evaluate_main_agent_input routes greeting to DIRECT_ANSWER."""
+        decision = evaluate_main_agent_input("Hello! How can you help me?")
+        self.assertEqual(decision.action, RouteAction.DIRECT_ANSWER)
+        self.assertIsNone(decision.target_agent)
+        self.assertTrue(decision.is_conversational)
+        self.assertIsNotNone(decision.direct_response)
+
+    def test_evaluate_main_agent_input_coding(self):
+        """Arrange-Act-Assert: evaluate_main_agent_input routes coding to DELEGATE_TO_HELPERS."""
+        decision = evaluate_main_agent_input("Build a FastAPI REST API with PostgreSQL")
+        self.assertEqual(decision.action, RouteAction.DELEGATE_TO_HELPERS)
+        self.assertIsNotNone(decision.target_agent)
+        self.assertTrue(decision.is_coding_or_complex)
+        self.assertIsNotNone(decision.task_description)
+
+    def test_reframed_main_agent_prompt_content(self):
+        """Ensure MAIN_AGENT_SYSTEM_PROMPT explicitly specifies greetings vs technical delegation."""
+        self.assertIn("GREETINGS & NORMAL CONVERSATIONS (ANSWER DIRECTLY)", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("CODING & COMPLEX ENGINEERING TASKS (USE HELPER AGENTS)", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("API_Manager", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("Database_Manager", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("Code_Reviewer", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("Do NOT invoke helper subagents for simple greetings", MAIN_AGENT_SYSTEM_PROMPT)
 
 
 if __name__ == "__main__":
     unittest.main()
+

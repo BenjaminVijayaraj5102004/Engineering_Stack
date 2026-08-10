@@ -1,1 +1,0 @@
-The user prefers PostgreSQL as the database and Python for development.

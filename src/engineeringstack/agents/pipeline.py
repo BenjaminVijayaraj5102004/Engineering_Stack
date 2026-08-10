@@ -1,8 +1,17 @@
 from langsmith import traceable
-from .main.main_agent import main_agent
+from ..builders.main_builder import build_main_agent
 from ..util.logger import get_logger
 
 logger = get_logger(__name__)
+
+_agent = None
+
+
+def get_default_agent():
+    global _agent
+    if _agent is None:
+        _agent = build_main_agent()
+    return _agent
 
 
 @traceable(name="format_prompt", run_type="prompt")
@@ -17,7 +26,8 @@ def format_prompt(user_query: str, system_override: str = None) -> dict:
 @traceable(name="invoke_llm_agent", run_type="chain")
 def invoke_agent_workflow(messages_payload: dict) -> dict:
     """Invoke the hierarchical multi-agent graph."""
-    return main_agent.invoke(messages_payload)
+    agent = get_default_agent()
+    return agent.invoke(messages_payload)
 
 
 @traceable(name="parse_output", run_type="parser")

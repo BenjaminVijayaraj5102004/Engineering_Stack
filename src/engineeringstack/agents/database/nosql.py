@@ -20,9 +20,10 @@ def nosql_subagent(
     selected_model = build_chat_model(model=model)
     nosql_agent = create_deep_agent(
         model=selected_model,
-        tools=[search_code],
+        tools=[search_code, get_file_contents],
         system_prompt=NOSQL_SYSTEM_PROMPT,
         checkpointer=checkpointer,
+        backend=backend,
     )
     return {
         "name": "NoSQL_agent",

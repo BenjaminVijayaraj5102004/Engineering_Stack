@@ -1,59 +1,108 @@
-# EngineeringStack SDK
+---
+title: EngineeringStack SDK
+description: Hierarchical multi-agent engineering framework built on LangGraph and DeepAgents
+version: 0.1.3
+tags:
+  - langgraph
+  - deepagents
+  - multi-agent
+  - ai-engineering
+  - python-sdk
+status: active
+license: MIT
+---
+
+# 🚀 EngineeringStack SDK
 
 [![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://github.com/BenjaminVijayaraj5102004/Engineering_Stack)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/framework-LangGraph%20%7C%20DeepAgents-orange.svg)](https://github.com/langchain-ai/langgraph)
+[![Tests](https://img.shields.io/badge/tests-96%20passed-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-EngineeringStack is a Python SDK designed for building hierarchical multi-agent engineering workflows. Built on top of LangGraph and DeepAgents, it coordinates specialized subagents for software architecture, API design, database schemas, and automated code review with configurable model providers and persistent memory backends.
+**EngineeringStack** is a developer-first Python SDK designed to orchestrate hierarchical, specialized AI agents for real-world software engineering workflows. Built on top of **LangGraph** and **DeepAgents**, it coordinates a supervisor agent with domain-specific subagents (API architects, database designers, and code reviewers) while preserving long-term cross-thread memory.
+
+> [!tip] Why EngineeringStack?
+> Instead of relying on a single monolithic prompt to handle full-stack design, database migrations, protocol specs, and security audits, EngineeringStack routes tasks to dedicated subagents that specialize in single domains with isolated context and tailored toolsets.
 
 ---
 
-## What is in v0.1.3
+## ⚡ Key Highlights
 
-- **Cross-Thread Long-Term Memory**: Support for persistent memory routes (`/memories/AGENTS.md`) using virtual stores or physical local disk directories (`local_memory_dir`).
-- **Dynamic Model Injection**: Plug in any model provider through standard strings (`ollama:qwen2.5-coder:32b`, `openai:gpt-4o`, `google_genai:gemini-2.5-flash`) or initialized LangChain chat model instances.
-- **Hierarchical Specialist Routing**: A main supervisor agent delegates tasks to specialized Manager agents (API Manager, Database Manager) and domain experts (REST, GraphQL, gRPC, SOAP, RDBMS, NoSQL, Redis, and Code Review).
-- **Structured Schema Normalization**: Automatic conversion of raw strings or dictionaries into validated `UserInput` objects and structured `AIOutput` (with formatted summaries and extracted code).
-- **Synchronous, Asynchronous, and Streaming APIs**: Support for `invoke`, `stream`, `astream`, and `batch` operations.
-- **Type Hinting**: Complete PEP 561 compliance with bundled `py.typed` marker.
-
----
-
-## Agent and Capability Matrix
-
-| Category | Component | Status | Description |
-| :--- | :--- | :---: | :--- |
-| **Core** | Hierarchical Multi-Agent Graph | Available | Supervisor graph coordinating specialized subagent execution |
-| | Cross-Thread Memory | Available | Virtual store (`StoreBackend`) and local disk (`FilesystemBackend`) memory |
-| | Custom LLM Injection | Available | Support for Ollama, Groq, OpenAI, Google Gemini, Anthropic, etc. |
-| | Normalization Pipeline | Available | Automated parsing for `UserInput` and `AIOutput` structures |
-| **API Management** | API Manager | Available | Routes API architecture tasks to specific protocol specialists |
-| | REST Agent | Available | Generates FastAPI, Flask, Express, and Django REST controllers |
-| | GraphQL Agent | Available | Generates schemas, queries, mutations, and resolvers |
-| | gRPC Agent | Available | Generates Protocol Buffer (`.proto`) definitions and service stubs |
-| | SOAP Agent | Available | Generates WSDL definitions and SOAP XML handlers |
-| **Database Management** | Database Manager | Available | Routes database queries to specialized storage workers |
-| | RDBMS Agent | Available | Generates SQL schemas, migrations, indices, and ORM models |
-| | NoSQL Agent | Available | Generates document schemas and aggregation pipelines |
-| | Redis Agent | Available | Generates key-value models, caching strategies, and pub/sub patterns |
-| **Code Quality** | Code Reviewer Agent | Available | Audits code for security vulnerabilities, performance, and best practices |
-| **Execution Modes** | Synchronous Invocation | Available | `stack.invoke(query)` returning structured output |
-| | Synchronous Streaming | Available | `stack.stream(query)` yielding graph execution chunks |
-| | Asynchronous Streaming | Available | `stack.astream(query)` for async web frameworks |
-| | Batch Execution | Available | `stack.batch([queries])` for parallel processing |
+* 🧠 **Cross-Thread Memory**: Retain user preferences and project guidelines across distinct conversation threads using virtual in-memory stores or local disk directories (`/memories/AGENTS.md`).
+* 🔀 **Hierarchical Delegation**: A central supervisor coordinates manager agents (**API Manager**, **Database Manager**) and deep specialists (**REST**, **GraphQL**, **gRPC**, **SOAP**, **RDBMS**, **NoSQL**, **Redis**, and **Code Reviewer**).
+* 🔌 **Any Model, Anywhere**: Drop in models from **Groq**, **Ollama**, **OpenAI**, **Google Gemini**, or **Anthropic** via standard connection strings or native LangChain chat instances.
+* 📦 **Structured Output Normalization**: Automatically receives raw text or JSON and yields clean `UserInput` representations and structured `AIOutput` (5-point executive summaries + extracted executable code blocks).
+* 🔄 **Sync, Async & Streaming**: Native support for `.invoke()`, `.stream()`, `.astream()`, and `.batch()` for integration with terminal CLIs, FastAPI backends, and background workers.
 
 ---
 
-## Installation
+## 🏗️ Architecture
 
-Using `uv`:
+```mermaid
+graph TD
+    User([User Request]) --> SDK[EngineeringStack SDK]
+    SDK --> InputNorm[Input Normalizer]
+    InputNorm --> MainAgent[Supervisor Agent]
+    
+    subgraph Manager Layer
+        MainAgent --> APIMgr[API Manager]
+        MainAgent --> DBMgr[Database Manager]
+        MainAgent --> Reviewer[Code Reviewer Agent]
+    end
+    
+    subgraph Specialist Layer
+        APIMgr --> REST[REST Specialist]
+        APIMgr --> GraphQL[GraphQL Specialist]
+        APIMgr --> gRPC[gRPC Specialist]
+        APIMgr --> SOAP[SOAP Specialist]
+        
+        DBMgr --> RDBMS[RDBMS Specialist]
+        DBMgr --> NoSQL[NoSQL Specialist]
+        DBMgr --> Redis[Redis Specialist]
+    end
+    
+    REST --> OutputNorm[AIOutput Normalizer]
+    GraphQL --> OutputNorm
+    gRPC --> OutputNorm
+    SOAP --> OutputNorm
+    RDBMS --> OutputNorm
+    NoSQL --> OutputNorm
+    Redis --> OutputNorm
+    Reviewer --> OutputNorm
+    
+    OutputNorm --> Response([Response: 5-Point Summary + Code])
+```
+
+---
+
+## 🤖 Agent Matrix
+
+| Agent | Scope & Role | Tools & Capabilities |
+| :--- | :--- | :--- |
+| **Supervisor (Main Agent)** | Intent classification, memory persistence & task routing | `classify_user_intent`, `get_routing_advice`, `generate_greeting_response` |
+| **API Manager** | Coordinates API design and routes protocol queries | Protocol selection & subagent delegation |
+| ↳ **REST Specialist** | Builds FastAPI, Express, Django REST endpoints & controllers | `search_code`, `get_file_contents` |
+| ↳ **GraphQL Specialist** | Generates GraphQL schemas, resolvers, mutations & queries | `search_code`, `get_file_contents` |
+| ↳ **gRPC Specialist** | Designs Protocol Buffers (`.proto`) and RPC services | `search_code`, `get_file_contents` |
+| ↳ **SOAP Specialist** | Generates XML payloads, WSDL schemas & SOAP handlers | `search_code`, `get_file_contents` |
+| **Database Manager** | Coordinates data modeling and storage strategies | Schema optimization & storage delegation |
+| ↳ **RDBMS Specialist** | PostgreSQL, MySQL, SQLite schemas, migrations & SQLAlchemy ORM | `search_code`, `get_file_contents` |
+| ↳ **NoSQL Specialist** | MongoDB, DynamoDB, document schemas & aggregation pipelines | `search_code`, `get_file_contents` |
+| ↳ **Redis Specialist** | In-memory key-value data structures, caching layers & pub/sub | `search_code`, `get_file_contents` |
+| **Code Reviewer** | Audits code for security flaws, bugs & performance bottlenecks | Code analysis & non-destructive review |
+
+---
+
+## 📦 Installation
+
+Install via `uv` (recommended):
 
 ```bash
 uv add engineeringstack
 ```
 
-Or using standard `pip`:
+Or via standard `pip`:
 
 ```bash
 pip install engineeringstack
@@ -61,9 +110,11 @@ pip install engineeringstack
 
 ---
 
-## Quickstart
+## 🚀 Quickstart Guide
 
-### 1. Basic Usage
+### 1. Basic Invocation
+
+Get started in just a few lines of code:
 
 ```python
 from engineeringstack import EngineeringStack
@@ -72,173 +123,151 @@ from engineeringstack import EngineeringStack
 stack = EngineeringStack()
 
 # Execute a query
-response = stack.invoke("Create a FastAPI endpoint for user authentication with JWT")
+response = stack.invoke("Create a FastAPI endpoint for user registration with bcrypt password hashing")
 
-# Access structured output
-print("=== Executive Summary ===")
-for step in response["ai_output"].summary:
-    print(f"- {step}")
+# Access structured response
+print("📋 Executive Summary:")
+for bullet in response["ai_output"].summary:
+    print(f"  • {bullet}")
 
-print("\n=== Generated Code ===")
+print("\n💻 Generated Code:")
 print(response["ai_output"].code)
 ```
 
-### 2. Using Cross-Thread Memory
+---
 
-#### Local Disk Storage
-Save preferences and guidelines directly to a physical directory on your local machine:
+### 2. Cross-Thread Memory Persistence
+
+EngineeringStack allows agents to remember project rules, schemas, and user preferences across independent conversation threads.
 
 ```python
 import uuid
 from engineeringstack import EngineeringStack
 
-# Point stack to a local directory
+# Point stack to a persistent directory on disk
 stack = EngineeringStack(local_memory_dir="./project_memory")
 
-# Thread 1: Teach the agent project conventions
+# Conversation Thread 1: Define architecture guidelines
 thread_1 = str(uuid.uuid4())
 stack.invoke(
-    "Save to /memory/AGENTS.md: Always use SQLAlchemy with PostgreSQL for database models.",
+    "Save to /memory/AGENTS.md: Always use PostgreSQL with async SQLAlchemy and UUID primary keys.",
     thread_id=thread_1,
 )
 
-# Thread 2: A new conversation automatically reads AGENTS.md
+# Conversation Thread 2: Fresh thread automatically loads AGENTS.md
 thread_2 = str(uuid.uuid4())
 response = stack.invoke(
-    "Design the user model schema.",
+    "Generate the User account database model.",
     thread_id=thread_2,
 )
+
 print(response["ai_output"].code)
 ```
 
-### 3. Custom Model Providers
+> [!note] Memory Storage Options
+> * **Virtual Store**: Pass `store=InMemoryStore()` for fast, in-memory testing.
+> * **Disk Store**: Pass `local_memory_dir="./memories"` for persistent local files.
+
+---
+
+### 3. Bring Your Own Model (BYOM)
+
+Easily switch between local open-source models and cloud providers:
 
 ```python
+import os
+from dotenv import load_dotenv
 from engineeringstack import EngineeringStack
-
-# Option A: Local Ollama Model
-stack = EngineeringStack(model="ollama:qwen2.5-coder:32b")
-
-# Option B: Cloud Provider String
-stack = EngineeringStack(model="google_genai:gemini-2.5-flash")
-
-# Option C: Pre-configured LangChain Chat Model
 from langchain_groq import ChatGroq
 
-custom_llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
+load_dotenv()
+
+# Option A: Fast Cloud LLM via Groq
+llm = ChatGroq(
+    model_name="llama-3.1-8b-instant",
+    api_key=os.getenv("GROQ_API_KEY"),
     temperature=0,
 )
-stack = EngineeringStack(model=custom_llm)
+stack = EngineeringStack(model=llm)
+
+# Option B: Local Ollama Model
+# stack = EngineeringStack(model="ollama:qwen2.5-coder:32b")
+
+# Option C: Google Gemini
+# stack = EngineeringStack(model="google_genai:gemini-2.5-flash")
 ```
 
-### 4. Streaming Responses
+---
+
+### 4. Streaming & Async Execution
+
+Stream tokens in real time to your terminal or web application:
 
 ```python
+import asyncio
 from engineeringstack import EngineeringStack
 
 stack = EngineeringStack()
 
-# Synchronous streaming
-for chunk in stack.stream("Create a gRPC service for real-time messaging"):
+# Synchronous Streaming
+for chunk in stack.stream("Design a Redis caching strategy for user session tokens"):
     print(chunk, end="", flush=True)
 
-# Asynchronous streaming
-async def main():
-    async for chunk in stack.astream("Design a MongoDB collection for audit logs"):
+# Asynchronous Streaming (FastAPI / WebSockets)
+async def stream_response():
+    async for chunk in stack.astream("Create a GraphQL mutation for updating user profile"):
         print(chunk, end="", flush=True)
+
+asyncio.run(stream_response())
 ```
 
 ---
 
-## Architecture
+## ⚙️ Environment Configuration
 
-```mermaid
-graph TD
-    User([User Request / UserInput]) --> SDK[EngineeringStack SDK]
-    SDK --> Normalizer[Input Normalizer]
-    Normalizer --> MainAgent[Main Agent Supervisor]
-    
-    MainAgent --> APIMgr[API Manager Subagent]
-    MainAgent --> DBMgr[Database Manager Subagent]
-    MainAgent --> Reviewer[Code Reviewer Subagent]
-    
-    APIMgr --> REST[REST Agent]
-    APIMgr --> GraphQL[GraphQL Agent]
-    APIMgr --> gRPC[gRPC Agent]
-    APIMgr --> SOAP[SOAP Agent]
-    
-    DBMgr --> RDBMS[RDBMS Agent]
-    DBMgr --> NoSQL[NoSQL Agent]
-    DBMgr --> Redis[Redis Agent]
-    
-    REST --> Output[AIOutput Normalizer]
-    GraphQL --> Output
-    gRPC --> Output
-    SOAP --> Output
-    RDBMS --> Output
-    NoSQL --> Output
-    Redis --> Output
-    Reviewer --> Output
-    
-    Output --> FinalResponse([Response: summary + code])
+Create a `.env` file in your project root:
+
+```env
+# LLM Providers
+GROQ_API_KEY="your_groq_api_key"
+OPENAI_API_KEY="your_openai_api_key"
+GOOGLE_API_KEY="your_google_gemini_api_key"
+
+# Optional Database Checkpointer
+DATABASE_URL="postgresql://postgres:password@localhost:5432/langgraph_db"
+
+# Observability (Optional)
+LANGSMITH_TRACING="true"
+LANGSMITH_API_KEY="your_langsmith_key"
+LANGSMITH_PROJECT="engineering-stack"
 ```
 
 ---
 
-## Roadmap & Upcoming Features
+## 🧪 Testing & Verification
 
-The following initiatives are planned for upcoming releases:
-
-- [ ] **Retrieval-Augmented Generation (RAG)**
-  - [ ] Codebase semantic indexing using AST parsers and embeddings
-  - [ ] External API documentation ingestion (OpenAPI, GraphQL schemas, Protobuf)
-  - [ ] Hybrid vector and lexical search for context augmentation
-- [ ] **Custom Model Context Protocol (MCP) Integration**
-  - [ ] Native MCP server discovery and connection pooling
-  - [ ] Custom tool execution via MCP client adapters
-  - [ ] Sandboxed filesystem and terminal execution over MCP
-- [ ] **Advanced Memory & Storage**
-  - [ ] Persistent PostgreSQL checkpointer and vector store integration
-  - [ ] Automatic memory summarization and eviction policies
-  - [ ] Workspace-wide multi-tenant scoping
-- [ ] **Automated Testing & Feedback Loops**
-  - [ ] Auto-generation of unit tests for implemented code
-  - [ ] In-loop code execution and self-healing error correction
-- [ ] **Distributed Execution**
-  - [ ] Async background task dispatching via Celery / Temporal
-
----
-
-## Configuration & Security
-
-- **Environment Variables**: Configure API keys in your `.env` file or environment:
-  ```env
-  GROQ_API_KEY="your_groq_key"
-  GOOGLE_API_KEY="your_google_gemini_key"
-  OPENAI_API_KEY="your_openai_key"
-  DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
-  ```
-- **Privacy Safeguards**: Local trace logs, credentials, and build caches are strictly ignored by `.gitignore` to prevent accidental credential leaks.
-
----
-
-## Development & Testing
-
-Run the automated test suite:
+Run the comprehensive test suite (96 tests covering unit logic, edge cases, cross-thread memory, and live Groq API integration):
 
 ```bash
+# Run complete test suite
 uv run pytest -v
-```
 
-Build the distribution package:
-
-```bash
-uv build
+# Run specific integration tests
+uv run pytest tests/test_main_agent_workflow.py -v
 ```
 
 ---
 
-## License
+## 🗺️ Roadmap
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+- [x] **v0.1.3**: Hierarchical routing, cross-thread memory, structured output extraction.
+- [ ] **RAG & Semantic Code Search**: AST-based codebase indexing and vector search over local repositories.
+- [ ] **Expanded MCP Client**: Discovery and tool calling over Model Context Protocol servers.
+- [ ] **Automated Self-Correction**: In-loop test execution and automated syntax correction before returning results.
+- [ ] **Postgres Checkpointing**: Native asynchronous PostgreSQL checkpointer for distributed multi-agent state.
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.

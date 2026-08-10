@@ -25,6 +25,7 @@ def build_api_manager(
         ],
         system_prompt=API_MANAGER_SYSTEM_PROMPT,
         checkpointer=checkpointer,
+        backend=backend,
     )
 
 

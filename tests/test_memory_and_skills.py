@@ -147,7 +147,7 @@ class TestMainAgentBuilderMemoryAndSkills(unittest.TestCase):
 
     def test_constants_definitions(self):
         """Ensure SDK default memory and skills constants are valid non-empty lists."""
-        self.assertEqual(DEFAULT_MEMORY, ["/memories/AGENTS.md"])
+        self.assertEqual(DEFAULT_MEMORY, ["/memories/preferences.md", "/memories/AGENTS.md"])
         self.assertEqual(DEFAULT_SKILLS, ["/skills/"])
 
     def test_custom_memory_and_skills_parameter_forwarding(self):

@@ -20,8 +20,8 @@ def code_review_subagent(
     code_review_agent = create_deep_agent(
         model=selected_model,
         system_prompt=CODE_REVIEW_SYSTEM_PROMPT,
-    
         checkpointer=checkpointer,
+        backend=backend,
     )
     logger.info(f"Selected model: {selected_model}")
     logger.info(f"Model class: {type(selected_model)}")

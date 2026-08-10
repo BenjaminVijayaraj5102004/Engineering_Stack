@@ -23,6 +23,7 @@ def build_database_manager(
         ],
         system_prompt=DATABASE_MANAGER_SYSTEM_PROMPT,
         checkpointer=checkpointer,
+        backend=backend,
     )
 
 

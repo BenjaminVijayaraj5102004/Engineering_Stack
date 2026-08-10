@@ -20,9 +20,10 @@ def soap_subagent(
     selected_model = build_chat_model(model=model)
     soap_agent = create_deep_agent(
         model=selected_model,
-        tools=[search_code],
+        tools=[search_code, get_file_contents],
         system_prompt=SOAP_SYSTEM_PROMPT,
         checkpointer=checkpointer,
+        backend=backend,
     )
     return {
         "name": "SOAP_Agent",
