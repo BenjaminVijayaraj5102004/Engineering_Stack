@@ -7,6 +7,7 @@ DEFAULT_MODEL_NAME = "ollama:qwen3-coder:30b"
 
 def build_chat_model(
     model: Optional[Union[str, BaseChatModel]] = None,
+    temperature: Optional[float] = None,
     **kwargs,
 ) -> BaseChatModel:
     """
@@ -15,6 +16,7 @@ def build_chat_model(
     Args:
         model: Optional model string (e.g. "ollama:qwen3-coder:30b", "openai:gpt-4o"),
                or a pre-configured BaseChatModel instance. If None, uses DEFAULT_MODEL_NAME.
+        temperature: Optional sampling temperature.
         **kwargs: Additional parameters passed to init_chat_model.
 
     Examples:
@@ -28,6 +30,9 @@ def build_chat_model(
 
     if isinstance(model, BaseChatModel):
         return model
+
+    if temperature is not None:
+        kwargs["temperature"] = temperature
 
     return init_chat_model(model=model, **kwargs)
 

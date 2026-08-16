@@ -87,8 +87,7 @@ class TestMainAgentWorkflowFromExample(unittest.TestCase):
         # Assert
         self.assertIsNotNone(self.stack.model)
         self.assertIs(self.stack.store, self.store)
-        self.assertIn("/memories/preferences.md", self.stack.memory)
-        self.assertIn("/memories/AGENTS.md", self.stack.memory)
+        self.assertEqual(self.stack.skills, ["/skills/"])
 
     def test_thread1_saves_user_introduction_and_answers_directly(self):
         """Arrange-Act-Assert: Thread 1 introduces user naturally and returns direct greeting."""

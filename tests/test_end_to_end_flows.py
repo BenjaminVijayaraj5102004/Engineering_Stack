@@ -21,13 +21,13 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.store.memory import InMemoryStore
 
 from engineeringstack.agents.api.rest import rest_subagent
+from engineeringstack.agents.coding.coding import coding_subagent
 from engineeringstack.agents.code_review.code_review import code_review_subagent
-from engineeringstack.agents.database.rdms import rdms_subagent
+from engineeringstack.agents.database.rdbms import rdbms_subagent
 from engineeringstack.agents.managers.apimanager import api_manager_subagent
 from engineeringstack.agents.managers.databasemanager import database_manager_subagent
+from engineeringstack.agents.managers.helper_manager import helper_manager_subagent
 from engineeringstack.builders.main_builder import (
-    DEFAULT_MEMORY,
-    _default_user_namespace,
     build_default_backend,
     build_main_agent,
 )
@@ -81,7 +81,7 @@ class TestActualCrossThreadMemory(unittest.TestCase):
                 routes={
                     "/memories/": StoreBackend(
                         store=store,
-                        namespace=_default_user_namespace,
+                        namespace=lambda rt: ("default_user",),
                     )
                 },
             ),
@@ -160,7 +160,7 @@ class TestRealAgentRouting(unittest.TestCase):
     """2. Real agent routing test suite."""
 
     def test_main_agent_subagent_routing_graph_structure(self):
-        """Arrange-Act-Assert: Main Agent graph compiles with Database Manager, API Manager, and Code Reviewer."""
+        """Arrange-Act-Assert: Main Agent graph compiles with Database Manager, API Manager, and Helper Manager."""
         # Arrange
         mock_model = MockToolCallingChatModel(response_text="Routing task to manager.")
 
@@ -180,7 +180,7 @@ class TestRealAgentRouting(unittest.TestCase):
 
         # Assert
         self.assertEqual(db_manager["name"], "Database_Manager")
-        self.assertIn("RDMS_agent", db_manager["description"])
+        self.assertIn("RDBMS_agent", db_manager["description"])
         self.assertIn("NoSQL_agent", db_manager["description"])
         self.assertIn("REDIS_agent", db_manager["description"])
         self.assertTrue(hasattr(db_manager["runnable"], "invoke"))
@@ -198,20 +198,31 @@ class TestRealAgentRouting(unittest.TestCase):
         self.assertIn("SOAP_Agent", api_mgr["description"])
         self.assertTrue(hasattr(api_mgr["runnable"], "invoke"))
 
+    def test_helper_manager_subagent_routing(self):
+        """Arrange-Act-Assert: Helper Manager routes to Coding_Agent and Code_Reviewer specialist subagents."""
+        # Act
+        helper_mgr = helper_manager_subagent()
+
+        # Assert
+        self.assertEqual(helper_mgr["name"], "Helper_Manager")
+        self.assertIn("Coding_Agent", helper_mgr["description"])
+        self.assertIn("Code_Reviewer", helper_mgr["description"])
+        self.assertTrue(hasattr(helper_mgr["runnable"], "invoke"))
+
 
 class TestRealSpecialistExecution(unittest.TestCase):
     """3. Real specialist execution test suite."""
 
-    def test_rdms_specialist_execution(self):
-        """Arrange-Act-Assert: RDMS specialist compiles and executes SQL domain workflow."""
+    def test_rdbms_specialist_execution(self):
+        """Arrange-Act-Assert: RDBMS specialist compiles and executes SQL domain workflow."""
         # Arrange
         mock_model = MockToolCallingChatModel(
             response_text="```sql\nCREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT);\n```"
         )
-        rdms = rdms_subagent(model=mock_model)
+        rdbms = rdbms_subagent(model=mock_model)
 
         # Act
-        result = rdms["runnable"].invoke(
+        result = rdbms["runnable"].invoke(
             {"messages": [HumanMessage(content="Create users table schema")]},
             config={"configurable": {"thread_id": str(uuid.uuid4())}}
         )
@@ -240,6 +251,25 @@ class TestRealSpecialistExecution(unittest.TestCase):
         last_msg = result["messages"][-1].content
         self.assertIn("@app.get('/health')", last_msg)
 
+    def test_coding_specialist_execution(self):
+        """Arrange-Act-Assert: Coding specialist compiles and generates generic algorithm code."""
+        # Arrange
+        mock_model = MockToolCallingChatModel(
+            response_text="```python\ndef binary_search(arr, target):\n    pass\n```"
+        )
+        coder = coding_subagent(model=mock_model)
+
+        # Act
+        result = coder["runnable"].invoke(
+            {"messages": [HumanMessage(content="Implement binary search in Python")]},
+            config={"configurable": {"thread_id": str(uuid.uuid4())}}
+        )
+
+        # Assert
+        self.assertIn("messages", result)
+        last_msg = result["messages"][-1].content
+        self.assertIn("def binary_search", last_msg)
+
     def test_code_review_specialist_execution(self):
         """Arrange-Act-Assert: Code review agent analyzes code and returns review comments."""
         # Arrange
@@ -257,6 +287,7 @@ class TestRealSpecialistExecution(unittest.TestCase):
         # Assert
         self.assertIn("messages", result)
         self.assertIn("Code Review:", result["messages"][-1].content)
+
 
 
 class TestRealEndToEndEngineeringStack(unittest.TestCase):
@@ -307,29 +338,22 @@ class TestRealEndToEndEngineeringStack(unittest.TestCase):
         self.assertIn("from fastapi import FastAPI", result["ai_output"].code)
         self.assertIn("Validated user requirements", result["ai_output"].summary[0])
 
-    def test_real_end_to_end_factory_function_with_local_memory_dir(self):
-        """Arrange-Act-Assert: create_engineering_stack factory with local_memory_dir integration."""
-        # Arrange
-        temp_dir = tempfile.mkdtemp()
-        try:
-            mock_model = MockToolCallingChatModel(
-                response_text="```python\ndef handler(): pass\n```\n1. Step A\n2. Step B\n3. Step C\n4. Step D\n5. Step E"
-            )
+    def test_real_end_to_end_factory_function(self):
+        """Arrange-Act-Assert: create_engineering_stack factory integration."""
+        mock_model = MockToolCallingChatModel(
+            response_text="```python\ndef handler(): pass\n```\n1. Step A\n2. Step B\n3. Step C\n4. Step D\n5. Step E"
+        )
 
-            # Act
-            stack = create_engineering_stack(
-                model=mock_model,
-                local_memory_dir=temp_dir,
-            )
-            result = stack.invoke("Build auth module")
+        # Act
+        stack = create_engineering_stack(
+            model=mock_model,
+        )
+        result = stack.invoke("Build auth module")
 
-            # Assert
-            self.assertIsInstance(stack, EngineeringStack)
-            self.assertEqual(stack.local_memory_dir, temp_dir)
-            self.assertIsInstance(result["ai_output"], AIOutput)
-            self.assertEqual(len(result["ai_output"].summary), 5)
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        # Assert
+        self.assertIsInstance(stack, EngineeringStack)
+        self.assertIsInstance(result["ai_output"], AIOutput)
+        self.assertEqual(len(result["ai_output"].summary), 5)
 
 
 if __name__ == "__main__":

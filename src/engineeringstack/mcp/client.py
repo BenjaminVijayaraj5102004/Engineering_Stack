@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from contextlib import asynccontextmanager
@@ -21,7 +22,7 @@ def load_config():
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         config = json.load(f)
 
-    token = os.getenv("GITHUB_MCP_PAT") or getattr(settings, "GITHUB_ACCESS_TOKEN", None) or os.getenv("GITHUB_ACCESS_TOKEN")
+    token = settings.GITHUB_ACCESS_TOKEN
 
     if not token:
         token = "dummy_token"  # Fallback for initialization without active network token
@@ -42,14 +43,15 @@ async def get_github_client():
     if "/sse" in url:
         async with sse_client(url=url, headers=headers) as (read_stream, write_stream):
             async with ClientSession(read_stream, write_stream) as session:
-                await session.initialize()
+                await asyncio.wait_for(session.initialize(), timeout=3.0)
                 yield session
     else:
-        async with httpx.AsyncClient(headers=headers, timeout=30.0) as http_client:
+        timeout_config = httpx.Timeout(5.0, connect=3.0)
+        async with httpx.AsyncClient(headers=headers, timeout=timeout_config) as http_client:
             async with streamable_http_client(url=url, http_client=http_client) as (
                 read_stream,
                 write_stream,
             ):
                 async with ClientSession(read_stream, write_stream) as session:
-                    await session.initialize()
+                    await asyncio.wait_for(session.initialize(), timeout=3.0)
                     yield session

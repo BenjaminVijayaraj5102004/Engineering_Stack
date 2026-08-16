@@ -52,10 +52,14 @@ class TestEngineeringStackSDK(unittest.TestCase):
         expected = {
             "EngineeringStack",
             "create_engineering_stack",
+            "SDK_SKILLS_DIR",
             "UserInput",
             "MainAgentOutput",
             "AIOutput",
             "__version__",
+            "enable_logging",
+            "disable_logging",
+            "get_logger",
         }
         self.assertEqual(exported, expected, f"Unexpected exports in __all__: {exported}")
 
@@ -166,37 +170,34 @@ class TestEngineeringStackSDK(unittest.TestCase):
         self.assertEqual(len(chunks), 2)
         self.assertEqual(chunks[0]["messages"][0]["content"], "async chunk 1")
 
-    def test_sdk_init_with_memory_skills_and_local_dirs(self):
-        """Arrange-Act-Assert: Memory, skills, local dirs, and store are stored on instance."""
+    def test_sdk_init_with_memory_and_developer_skills(self):
+        """Arrange-Act-Assert: Memory, internal developer skills, skills_dir, and store are configured on instance."""
         # Arrange & Act
         stack = engineeringstack.EngineeringStack(
             agent=MockAgent(),
             memory=["/memories/custom.md"],
-            skills=["/skills/custom/"],
-            local_memory_dir="./mem_test",
-            local_skills_dir="./skills_test",
             store="dummy_store",
         )
 
         # Assert
         self.assertEqual(stack.memory, ["/memories/custom.md"])
-        self.assertEqual(stack.skills, ["/skills/custom/"])
-        self.assertEqual(stack.local_memory_dir, "./mem_test")
-        self.assertEqual(stack.local_skills_dir, "./skills_test")
+        self.assertEqual(stack.skills, ["/skills/"])
+        self.assertEqual(stack.skills_dir, engineeringstack.SDK_SKILLS_DIR)
         self.assertEqual(stack.store, "dummy_store")
 
-    def test_factory_with_memory_skills_and_local_dirs(self):
-        """Arrange-Act-Assert: create_engineering_stack forwards memory and skills configuration."""
+    def test_factory_with_memory_and_store(self):
+        """Arrange-Act-Assert: create_engineering_stack forwards memory and store configuration."""
         # Arrange & Act
         stack = engineeringstack.create_engineering_stack(
             agent=MockAgent(),
             memory=["/memories/custom.md"],
-            skill=["/skills/singular/"],
+            store="custom_store",
         )
 
         # Assert
         self.assertEqual(stack.memory, ["/memories/custom.md"])
-        self.assertEqual(stack.skills, ["/skills/singular/"])
+        self.assertEqual(stack.skills, ["/skills/"])
+        self.assertEqual(stack.store, "custom_store")
 
     def test_sdk_invoke_exception_propagates(self):
         """Arrange-Act-Assert: Agent execution errors propagate with clear stacktrace."""

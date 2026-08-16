@@ -1,8 +1,9 @@
 from pathlib import Path
 import re
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, Optional, Union
 import uuid
 from .models.ai_model import build_chat_model
+from .builders.backend import SDK_SKILLS_DIR
 from .builders.main_builder import build_main_agent
 from .schema.state import UserInput, AIOutput
 from langchain_core.messages import AIMessage, HumanMessage
@@ -19,18 +20,19 @@ class EngineeringStack:
         >>> print(response["ai_output"].summary)
     """
 
+    skills_dir: Path = SDK_SKILLS_DIR
+
     def __init__(
         self,
         model: Optional[Any] = None,
         backend: Optional[Any] = None,
         agent: Optional[Any] = None,
         memory: Optional[list[str]] = None,
-        skills: Optional[list[str]] = None,
-        skill: Optional[Any] = None,
         tools: Optional[list[Any]] = None,
-        local_memory_dir: Optional[Union[str, Path]] = None,
-        local_skills_dir: Optional[Union[str, Path]] = None,
         store: Optional[Any] = None,
+        middleware: Optional[list[Any]] = None,
+        verbose: bool = False,
+        enable_logging: bool = False,
     ):
         """Initialize the EngineeringStack instance.
 
@@ -38,22 +40,25 @@ class EngineeringStack:
             model: Optional custom LLM model instance or model name string.
             backend: Optional backend provider/configuration override.
             agent: Optional pre-built agent graph override.
-            memory: Optional list of virtual memory paths (defaults to ['/memories/AGENTS.md']).
-            skills: Optional list of skill directory paths (defaults to ['/skills/']).
-            skill: Alias for skills for convenience.
-            tools: Optional list of custom tools (defaults to helper intent & routing tools).
-            local_memory_dir: Optional local directory path for saving memories directly to disk.
-            local_skills_dir: Optional local directory path for loading skills directly from disk.
+            memory: Optional list of virtual memory paths.
+            tools: Optional list of custom tools.
             store: Optional LangGraph BaseStore instance (e.g. InMemoryStore or PostgresStore).
+            middleware: Optional list of custom middlewares.
+            verbose: If True, enables console debug logging.
+            enable_logging: Alias for verbose.
         """
+        if verbose or enable_logging:
+            from .util.logger import enable_logging as _enable_logging
+            _enable_logging(to_console=True)
+
         self.model = build_chat_model(model=model)
         self.backend = backend
-        self.memory = memory if memory is not None else [ "/memories/preferences.md", "/memories/AGENTS.md"]
-        self.skills = skills if skills is not None else (skill if skill is not None else ["/skills/"])
+        self.memory = memory
+        self.skills = ["/skills/"]
         self.tools = tools
-        self.local_memory_dir = local_memory_dir
-        self.local_skills_dir = local_skills_dir
+        self.skills_dir = SDK_SKILLS_DIR
         self.store = store if store is not None else InMemoryStore()
+        self.middleware = middleware
 
         if agent is not None:
             self.agent = agent
@@ -64,10 +69,10 @@ class EngineeringStack:
                 memory=self.memory,
                 skills=self.skills,
                 tools=self.tools,
-                local_memory_dir=self.local_memory_dir,
-                local_skills_dir=self.local_skills_dir,
                 store=self.store,
+                middleware=self.middleware,
             )
+
     def _normalize_input(self, input_data: Any) -> tuple[UserInput, dict[str, Any]]:
         """Normalize input data into a UserInput schema and a graph state dict."""
         if isinstance(input_data, UserInput):
@@ -99,13 +104,16 @@ class EngineeringStack:
         else:
             user_input = UserInput(query=str(input_data))
 
-        content_str = (
-            f"User Request Query: {user_input.query}\n"
-            f"Requirements: {user_input.requirements or 'N/A'}\n"
-            f"Framework: {user_input.framework or 'N/A'}\n"
-            f"Language: {user_input.language or 'N/A'}\n"
-            f"Database: {user_input.database or 'N/A'}"
-        )
+        parts = [f"User Request: {user_input.query}"]
+        if user_input.requirements:
+            parts.append(f"Requirements: {user_input.requirements}")
+        if user_input.framework:
+            parts.append(f"Framework: {user_input.framework}")
+        if user_input.language:
+            parts.append(f"Language: {user_input.language}")
+        if user_input.database:
+            parts.append(f"Database: {user_input.database}")
+        content_str = "\n".join(parts)
         payload = {"messages": [{"role": "user", "content": content_str}]}
         return user_input, payload
 
@@ -130,7 +138,6 @@ class EngineeringStack:
         else:
             code_content = final_text.strip()
 
-
         bullets: list[str] = []
         for line in final_text.splitlines():
             line_str = line.strip()
@@ -141,7 +148,6 @@ class EngineeringStack:
                 if cleaned and cleaned not in bullets:
                     bullets.append(cleaned)
 
- 
         fallback_bullets = [
             "Parsed and extracted UserInput specification.",
             "Routed task through Main Agent and specialized Manager.",
@@ -198,8 +204,8 @@ class EngineeringStack:
         input_data: Any,
         thread_id: Optional[str] = None,
         **kwargs: Any,
-    ) -> Generator[Any, None, None]:
-        """Stream response chunks from the agent workflow synchronously."""
+    ) -> Any:
+        """Developer/Debug method: Stream state chunks from the agent workflow."""
         config = kwargs.pop("config", {})
         configurable = config.get("configurable", {})
         if thread_id is None:
@@ -216,8 +222,8 @@ class EngineeringStack:
         input_data: Any,
         thread_id: Optional[str] = None,
         **kwargs: Any,
-    ) -> AsyncGenerator[Any, None]:
-        """Stream response chunks from the agent workflow asynchronously."""
+    ) -> Any:
+        """Developer/Debug method: Stream state chunks asynchronously from the agent workflow."""
         config = kwargs.pop("config", {})
         configurable = config.get("configurable", {})
         if thread_id is None:
@@ -239,17 +245,17 @@ class EngineeringStack:
         return [self.invoke(inp, **kwargs) for inp in inputs]
 
 
+
 def create_engineering_stack(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
     agent: Optional[Any] = None,
     memory: Optional[list[str]] = None,
-    skills: Optional[list[str]] = None,
-    skill: Optional[Any] = None,
     tools: Optional[list[Any]] = None,
-    local_memory_dir: Optional[Union[str, Path]] = None,
-    local_skills_dir: Optional[Union[str, Path]] = None,
     store: Optional[Any] = None,
+    middleware: Optional[list[Any]] = None,
+    verbose: bool = False,
+    enable_logging: bool = False,
 ) -> EngineeringStack:
     """Factory function to create an EngineeringStack instance."""
     return EngineeringStack(
@@ -257,12 +263,12 @@ def create_engineering_stack(
         backend=backend,
         agent=agent,
         memory=memory,
-        skills=skills,
-        skill=skill,
         tools=tools,
-        local_memory_dir=local_memory_dir,
-        local_skills_dir=local_skills_dir,
         store=store,
+        middleware=middleware,
+        verbose=verbose,
+        enable_logging=enable_logging,
     )
+
 
 

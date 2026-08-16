@@ -2,14 +2,16 @@
 
 Follows TDD Workflow:
 - Arrange-Act-Assert (AAA) pattern
-- Verifies subagent contracts, routing descriptions, and schema integrity
+- Verifies subagent contracts, routing descriptions, skills forwarding, and schema integrity
 """
 
 import unittest
 from engineeringstack.agents.managers.databasemanager import database_manager_subagent
 from engineeringstack.agents.managers.apimanager import api_manager_subagent
+from engineeringstack.agents.managers.helper_manager import helper_manager_subagent
+from engineeringstack.agents.coding.coding import coding_subagent
 from engineeringstack.agents.code_review.code_review import code_review_subagent
-from engineeringstack.agents.database.rdms import rdms_subagent
+from engineeringstack.agents.database.rdbms import rdbms_subagent
 from engineeringstack.agents.database.nosql import nosql_subagent
 from engineeringstack.agents.database.redis import redis_subagent
 from engineeringstack.agents.api.rest import rest_subagent
@@ -17,21 +19,21 @@ from engineeringstack.agents.api.graphql import graphql_subagent
 from engineeringstack.agents.api.grpc import grpc_subagent
 from engineeringstack.agents.api.soap import soap_subagent
 
-
+from engineeringstack.builders.db_builder import build_database_manager
+from engineeringstack.builders.api_builder import build_api_manager
+from engineeringstack.builders.helper_builder import build_helper_manager
 from engineeringstack.builders.main_builder import (
     build_main_agent,
-    evaluate_main_agent_input,
     get_helper_agents,
 )
 from engineeringstack.prompts.main_agent_prompt import MAIN_AGENT_SYSTEM_PROMPT
-from engineeringstack.util.helper import RouteAction, IntentType
 
 
 class TestSubAgentBuilders(unittest.TestCase):
     """Test suite for domain specialist and manager subagent definitions."""
 
     def test_database_manager_contract(self):
-        """Arrange-Act-Assert: Database Manager returns compliant subagent dict."""
+        """Arrange-Act-Assert: Database Manager returns compliant subagent dict with skills."""
         # Act
         subagent = database_manager_subagent()
 
@@ -42,7 +44,7 @@ class TestSubAgentBuilders(unittest.TestCase):
         self.assertTrue(hasattr(subagent["runnable"], "invoke"))
 
     def test_api_manager_contract(self):
-        """Arrange-Act-Assert: API Manager returns compliant subagent dict."""
+        """Arrange-Act-Assert: API Manager returns compliant subagent dict with skills."""
         # Act
         subagent = api_manager_subagent()
 
@@ -50,6 +52,38 @@ class TestSubAgentBuilders(unittest.TestCase):
         self.assertEqual(subagent["name"], "API_Manager")
         self.assertIn("Router only", subagent["description"])
         self.assertIn("system_prompt", subagent)
+        self.assertTrue(hasattr(subagent["runnable"], "invoke"))
+
+    def test_helper_manager_contract(self):
+        """Arrange-Act-Assert: Helper Manager returns compliant subagent dict with skills."""
+        # Act
+        subagent = helper_manager_subagent()
+
+        # Assert
+        self.assertEqual(subagent["name"], "Helper_Manager")
+        self.assertIn("Router only", subagent["description"])
+        self.assertIn("system_prompt", subagent)
+        self.assertTrue(hasattr(subagent["runnable"], "invoke"))
+
+    def test_manager_builder_skills_forwarding(self):
+        """Arrange-Act-Assert: Manager builders accept custom skills parameter."""
+        custom_skills = ["/skills/custom/"]
+        db_mgr = build_database_manager(skills=custom_skills)
+        api_mgr = build_api_manager(skills=custom_skills)
+        helper_mgr = build_helper_manager(skills=custom_skills)
+
+        self.assertTrue(hasattr(db_mgr, "invoke"))
+        self.assertTrue(hasattr(api_mgr, "invoke"))
+        self.assertTrue(hasattr(helper_mgr, "invoke"))
+
+    def test_coding_subagent_contract(self):
+        """Arrange-Act-Assert: Coding Agent returns compliant subagent dict."""
+        # Act
+        subagent = coding_subagent()
+
+        # Assert
+        self.assertEqual(subagent["name"], "Coding_Agent")
+        self.assertIn("Implements generic software code", subagent["description"])
         self.assertTrue(hasattr(subagent["runnable"], "invoke"))
 
     def test_code_review_subagent_contract(self):
@@ -62,12 +96,22 @@ class TestSubAgentBuilders(unittest.TestCase):
         self.assertIn("Reviews existing code only", subagent["description"])
         self.assertTrue(hasattr(subagent["runnable"], "invoke"))
 
+    def test_build_managers_return_runnable_graphs(self):
+        """Arrange-Act-Assert: build_database_manager, build_api_manager, build_helper_manager return runnable graphs."""
+        db_mgr = build_database_manager()
+        api_mgr = build_api_manager()
+        helper_mgr = build_helper_manager()
+
+        self.assertTrue(hasattr(db_mgr, "invoke"))
+        self.assertTrue(hasattr(api_mgr, "invoke"))
+        self.assertTrue(hasattr(helper_mgr, "invoke"))
+
     def test_database_domain_specialists_contracts(self):
-        """Arrange-Act-Assert: RDMS, NoSQL, and Redis specialist subagents have valid contracts."""
+        """Arrange-Act-Assert: RDBMS, NoSQL, and Redis specialist subagents have valid contracts."""
         # Act & Assert
-        rdms = rdms_subagent()
-        self.assertEqual(rdms["name"], "RDMS_agent")
-        self.assertTrue(hasattr(rdms["runnable"], "invoke"))
+        rdbms = rdbms_subagent()
+        self.assertEqual(rdbms["name"], "RDBMS_agent")
+        self.assertTrue(hasattr(rdbms["runnable"], "invoke"))
 
         nosql = nosql_subagent()
         self.assertEqual(nosql["name"], "NoSQL_agent")
@@ -97,38 +141,20 @@ class TestSubAgentBuilders(unittest.TestCase):
         self.assertTrue(hasattr(soap["runnable"], "invoke"))
 
     def test_get_helper_agents(self):
-        """Arrange-Act-Assert: get_helper_agents returns all 3 helper subagents."""
+        """Arrange-Act-Assert: get_helper_agents returns all 3 top-level managers."""
         helpers = get_helper_agents()
         self.assertEqual(len(helpers), 3)
         names = {h["name"] for h in helpers}
-        self.assertEqual(names, {"Database_Manager", "API_Manager", "Code_Reviewer"})
-
-    def test_evaluate_main_agent_input_greeting(self):
-        """Arrange-Act-Assert: evaluate_main_agent_input routes greeting to DIRECT_ANSWER."""
-        decision = evaluate_main_agent_input("Hello! How can you help me?")
-        self.assertEqual(decision.action, RouteAction.DIRECT_ANSWER)
-        self.assertIsNone(decision.target_agent)
-        self.assertTrue(decision.is_conversational)
-        self.assertIsNotNone(decision.direct_response)
-
-    def test_evaluate_main_agent_input_coding(self):
-        """Arrange-Act-Assert: evaluate_main_agent_input routes coding to DELEGATE_TO_HELPERS."""
-        decision = evaluate_main_agent_input("Build a FastAPI REST API with PostgreSQL")
-        self.assertEqual(decision.action, RouteAction.DELEGATE_TO_HELPERS)
-        self.assertIsNotNone(decision.target_agent)
-        self.assertTrue(decision.is_coding_or_complex)
-        self.assertIsNotNone(decision.task_description)
+        self.assertEqual(names, {"Database_Manager", "API_Manager", "Helper_Manager"})
 
     def test_reframed_main_agent_prompt_content(self):
-        """Ensure MAIN_AGENT_SYSTEM_PROMPT explicitly specifies greetings vs technical delegation."""
-        self.assertIn("GREETINGS & NORMAL CONVERSATIONS (ANSWER DIRECTLY)", MAIN_AGENT_SYSTEM_PROMPT)
-        self.assertIn("CODING & COMPLEX ENGINEERING TASKS (USE HELPER AGENTS)", MAIN_AGENT_SYSTEM_PROMPT)
+        """Ensure MAIN_AGENT_SYSTEM_PROMPT specifies identity, managers, and skill references."""
+        self.assertIn("Main Agent", MAIN_AGENT_SYSTEM_PROMPT)
         self.assertIn("API_Manager", MAIN_AGENT_SYSTEM_PROMPT)
         self.assertIn("Database_Manager", MAIN_AGENT_SYSTEM_PROMPT)
-        self.assertIn("Code_Reviewer", MAIN_AGENT_SYSTEM_PROMPT)
-        self.assertIn("Do NOT invoke helper subagents for simple greetings", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("Helper_Manager", MAIN_AGENT_SYSTEM_PROMPT)
+        self.assertIn("loaded skills", MAIN_AGENT_SYSTEM_PROMPT)
 
 
 if __name__ == "__main__":
     unittest.main()
-
