@@ -12,6 +12,24 @@ from ..util.middleware import create_router_middleware
 from ..prompts.api_prompt import API_MANAGER_SYSTEM_PROMPT
 
 
+def get_api_subagents(
+    model: Optional[Any] = None,
+    backend: Optional[Any] = None,
+    skills: Optional[list[str]] = None,
+) -> list[dict[str, Any]]:
+    """Return the list of API leaf subagents."""
+    selected_model = build_chat_model(model=model)
+    resolved_skills = skills if skills is not None else ["/skills/"]
+    resolved_backend = backend if backend is not None else build_default_backend()
+    return [
+        rest_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
+        graphql_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
+        grpc_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
+        soap_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
+        code_review_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
+    ]
+
+
 def build_api_manager(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
@@ -28,13 +46,7 @@ def build_api_manager(
     middleware = create_router_middleware(backend=resolved_backend)
     return create_deep_agent(
         model=selected_model,
-        subagents=[
-            rest_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
-            graphql_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
-            grpc_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
-            soap_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
-            code_review_subagent(model=selected_model, backend=resolved_backend, skills=resolved_skills),
-        ],
+        subagents=get_api_subagents(model=selected_model, backend=resolved_backend, skills=resolved_skills),
         tools=resolved_tools,
         middleware=middleware,
         skills=resolved_skills,
@@ -42,3 +54,9 @@ def build_api_manager(
         checkpointer=checkpointer,
         backend=resolved_backend,
     )
+
+
+# Graph export instances for debugging and standalone execution
+api_manager = build_api_manager()
+api_subagent = api_manager
+graph = api_manager

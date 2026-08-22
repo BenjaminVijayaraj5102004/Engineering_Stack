@@ -2,7 +2,7 @@ from typing import Any, Optional
 from deepagents import create_deep_agent
 from ...models.ai_model import build_chat_model
 from ...builders.backend import build_default_backend
-from ...tools.tools import search_code, get_file_contents
+from ...tools.tools import get_domain_tools, search_code, get_file_contents, meniscus_recall
 from ...util.checkpointer_memory import checkpointer
 from ...util.logger import get_logger
 from ...util.middleware import create_reviewer_middleware
@@ -15,6 +15,7 @@ def code_review_subagent(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
     skills: Optional[list[str]] = None,
+    tools: Optional[list[Any]] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Build the Code Reviewer leaf subagent dictionary dynamically."""
@@ -22,12 +23,13 @@ def code_review_subagent(
     selected_model = build_chat_model(model=model)
     resolved_skills = skills if skills is not None else ["/skills/"]
     resolved_backend = backend if backend is not None else build_default_backend()
+    resolved_tools = tools if tools is not None else get_domain_tools("code_review")
 
     middleware = create_reviewer_middleware(backend=resolved_backend)
 
     code_review_agent = create_deep_agent(
         model=selected_model,
-        tools=[search_code, get_file_contents],
+        tools=resolved_tools,
         system_prompt=CODE_REVIEW_SYSTEM_PROMPT,
         middleware=middleware,
         skills=resolved_skills,
@@ -40,3 +42,8 @@ def code_review_subagent(
         "system_prompt": CODE_REVIEW_SYSTEM_PROMPT,
         "runnable": code_review_agent,
     }
+
+
+# Graph export instances
+helping_subagent = code_review_subagent()["runnable"]
+graph = helping_subagent

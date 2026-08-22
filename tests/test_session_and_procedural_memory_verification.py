@@ -255,7 +255,7 @@ class TestProceduralMemory(unittest.TestCase):
 
         # Assert
         self.assertIsNone(errors, f"Skill loading produced errors: {errors}")
-        self.assertEqual(len(skills), 5, f"Expected 5 skills, found {len(skills)}")
+        self.assertEqual(len(skills), 6, f"Expected 6 skills, found {len(skills)}")
 
         discovered_names = {s["name"] for s in skills}
         expected_names = {
@@ -264,6 +264,7 @@ class TestProceduralMemory(unittest.TestCase):
             "database-manager",
             "helper-manager",
             "code-review",
+            "mcp-manager",
         }
         self.assertEqual(discovered_names, expected_names)
 

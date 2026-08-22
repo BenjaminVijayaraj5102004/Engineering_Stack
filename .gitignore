@@ -37,3 +37,8 @@ langsmith_traces/
 memory/
 memories/
 examples/main_agent.py
+examples/mcp_test.py
+
+# MCP Server Configs & Credentials
+src/engineeringstack/mcp/config/
+

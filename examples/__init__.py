@@ -1,3 +1,2 @@
-from .main_agent import main_agent
+"""Example scripts demonstrating Engineering Stack usage."""
 
-__all__ = ["main_agent"]

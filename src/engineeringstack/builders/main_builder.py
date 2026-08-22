@@ -2,17 +2,18 @@
 
 Constructs the top-level orchestrator agent with intent evaluation tools,
 greetings/conversation handling, and specialized helper subagents
-(API_Manager, Database_Manager, and Code_Reviewer).
+(API_Manager, Database_Manager, Helper_Manager, and MCP_Manager).
 """
 
 from typing import Any, Optional
 from deepagents import create_deep_agent
-from langgraph.store.memory import InMemoryStore
 from ..models.ai_model import build_chat_model
 from ..prompts.main_agent_prompt import MAIN_AGENT_SYSTEM_PROMPT
 from ..agents.managers.apimanager import api_manager_subagent
 from ..agents.managers.databasemanager import database_manager_subagent
 from ..agents.managers.helper_manager import helper_manager_subagent
+from ..agents.managers.mcpmanager import mcp_manager_subagent
+from ..tools.tools import meniscus_recall, meniscus_log, search_knowledge_base, set_active_store
 from ..util.checkpointer_memory import checkpointer
 from ..util.logger import get_logger
 from ..util.middleware import create_router_middleware
@@ -20,6 +21,7 @@ from .backend import (
     SDK_SKILLS_DIR,
     build_default_backend,
 )
+from .store import build_default_store
 
 logger = get_logger(__name__)
 
@@ -28,6 +30,7 @@ def get_helper_agents(
     model: Optional[Any] = None,
     backend: Optional[Any] = None,
     skills: Optional[list[str]] = None,
+    include_mcp: bool = False,
 ) -> list[dict[str, Any]]:
     """Build and return the list of specialized manager subagents for Main Agent.
 
@@ -35,8 +38,9 @@ def get_helper_agents(
     - Database_Manager: Routes database tasks (SQL, NoSQL, Redis).
     - API_Manager: Routes API tasks (REST, GraphQL, gRPC, SOAP).
     - Helper_Manager: Routes generic coding to Coding_Agent and reviews to Code_Reviewer.
+    - MCP_Manager (optional/included in main agent): Provisions custom MCP servers and subagents.
     """
-    return [
+    agents = [
         database_manager_subagent(
             model=model,
             backend=backend,
@@ -53,6 +57,15 @@ def get_helper_agents(
             skills=skills,
         ),
     ]
+    if include_mcp:
+        agents.append(
+            mcp_manager_subagent(
+                model=model,
+                backend=backend,
+                skills=skills,
+            )
+        )
+    return agents
 
 
 def build_main_agent(
@@ -79,16 +92,18 @@ def build_main_agent(
         Compiled LangGraph state graph for the Main Agent.
     """
     selected_model = build_chat_model(model=model)
-    resolved_store = store if store is not None else InMemoryStore()
+    resolved_store = store if store is not None else build_default_store()
+    set_active_store(resolved_store)
     resolved_backend = backend if backend is not None else build_default_backend()
     resolved_skills = skills if skills is not None else ["/skills/"]
-    resolved_tools = list(tools) if tools is not None else None
+    resolved_tools = list(tools) if tools is not None else [meniscus_recall, meniscus_log, search_knowledge_base]
 
-    # Resolve Helper Subagents
+    # Resolve Helper Subagents (including MCP Manager for custom MCP provisioning)
     subagents = get_helper_agents(
         model=selected_model,
         backend=resolved_backend,
         skills=resolved_skills,
+        include_mcp=True,
     )
 
     # Configure Middlewares:
@@ -100,7 +115,7 @@ def build_main_agent(
     logger.info(
         "Building Main Agent with %d helper subagents and %d custom tools",
         len(subagents),
-
+        len(resolved_tools),
     )
 
     return create_deep_agent(
@@ -110,8 +125,13 @@ def build_main_agent(
         backend=resolved_backend,
         memory=memory,
         skills=resolved_skills,
-        tools = resolved_tools,
+        tools=resolved_tools,
         store=resolved_store,
         subagents=subagents,
         checkpointer=checkpointer,
     )
+
+
+# Graph export instances for debugging and standalone execution
+main_agent = build_main_agent()
+graph = main_agent

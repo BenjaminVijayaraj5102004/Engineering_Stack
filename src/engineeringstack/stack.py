@@ -5,9 +5,9 @@ import uuid
 from .models.ai_model import build_chat_model
 from .builders.backend import SDK_SKILLS_DIR
 from .builders.main_builder import build_main_agent
+from .builders.store import build_default_store
 from .schema.state import UserInput, AIOutput
 from langchain_core.messages import AIMessage, HumanMessage
-from langgraph.store.memory import InMemoryStore
 
 
 class EngineeringStack:
@@ -57,7 +57,7 @@ class EngineeringStack:
         self.skills = ["/skills/"]
         self.tools = tools
         self.skills_dir = SDK_SKILLS_DIR
-        self.store = store if store is not None else InMemoryStore()
+        self.store = store if store is not None else build_default_store()
         self.middleware = middleware
 
         if agent is not None:

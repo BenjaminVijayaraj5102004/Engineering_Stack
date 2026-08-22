@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from ...prompts.helper_prompt import HELPER_MANAGER_SYSTEM_PROMPT
-from ...builders.helper_builder import build_helper_manager
+from ...builders.helper_builder import build_helper_manager, helper_manager, helping_subagent, graph
 from ...util.logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,3 +24,12 @@ def helper_manager_subagent(
             skills=skills,
         ),
     }
+
+
+__all__ = [
+    "helper_manager_subagent",
+    "build_helper_manager",
+    "helper_manager",
+    "helping_subagent",
+    "graph",
+]

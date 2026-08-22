@@ -204,9 +204,9 @@ class TestRealGroqModelIntegration(unittest.TestCase):
 
         from langchain_groq import ChatGroq
 
-        model_name = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+        model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
         self.real_llm = ChatGroq(
-            model_name=model_name,
+            model=model_name,
             api_key=self.groq_api_key,
             temperature=0,
             max_retries=1,
