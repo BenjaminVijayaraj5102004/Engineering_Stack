@@ -153,8 +153,8 @@ class TestOutputExtraction(unittest.TestCase):
         self.assertEqual(ai_output.summary[0], "Step 1: Initialize database")
         self.assertIn("def app():", ai_output.code)
 
-    def test_extract_ai_output_fallback_bullets_when_fewer_than_five(self):
-        """Arrange-Act-Assert: Fewer than 5 bullets triggers fallback completion to reach exactly 5."""
+    def test_extract_ai_output_dynamic_bullets(self):
+        """Arrange-Act-Assert: Bullet points are extracted dynamically without hardcoded fallbacks."""
         # Arrange
         assistant_content = (
             "Short answer:\n"
@@ -167,13 +167,10 @@ class TestOutputExtraction(unittest.TestCase):
         ai_output = self.stack._extract_ai_output(messages)
 
         # Assert
-        self.assertEqual(len(ai_output.summary), 5)
+        self.assertIsInstance(ai_output, AIOutput)
+        self.assertEqual(len(ai_output.summary), 1)
         self.assertEqual(ai_output.summary[0], "Step 1: Configured service")
-        # Ensure remaining 4 items come from fallback bullets
-        self.assertEqual(
-            ai_output.summary[1],
-            "Routed task through Main Agent and specialized Manager.",
-        )
+        self.assertEqual(ai_output.code, "x = 42")
 
 
 if __name__ == "__main__":

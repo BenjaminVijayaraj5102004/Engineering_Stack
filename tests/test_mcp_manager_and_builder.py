@@ -85,11 +85,16 @@ class TestMCPManagerAndBuilder(unittest.TestCase):
         self.assertIn("get_tools", content)
         self.assertIn("create_deep_agent", content)
         self.assertIn("dynamic_mcp_subagent", content)
+        self.assertIn(".env", content)
+        self.assertIn("Human Interrupt", content)
+        self.assertIn("PostgreSQL MCP Server Setup", content)
 
     def test_mcp_prompts_defined(self):
         """Verify MCP prompt templates are non-empty and specify role constraints."""
         self.assertIn("MCP_Manager", MCP_MANAGER_SYSTEM_PROMPT)
         self.assertIn("/skills/mcp-manager/SKILL.md", MCP_MANAGER_SYSTEM_PROMPT)
+        self.assertIn("Human Interrupt", MCP_MANAGER_SYSTEM_PROMPT)
+        self.assertIn(".env", MCP_MANAGER_SYSTEM_PROMPT)
         self.assertIn("Dedicated Custom MCP Tool Specialist", MCP_SUBAGENT_SYSTEM_PROMPT)
 
     def test_build_mcp_manager(self):

@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-from typing import Any, Optional, Union
+from typing import Any, Optional
 import uuid
 from .models.ai_model import build_chat_model
 from .builders.backend import SDK_SKILLS_DIR
@@ -74,48 +74,18 @@ class EngineeringStack:
             )
 
     def _normalize_input(self, input_data: Any) -> tuple[UserInput, dict[str, Any]]:
-        """Normalize input data into a UserInput schema and a graph state dict."""
-        if isinstance(input_data, UserInput):
-            user_input = input_data
-        elif isinstance(input_data, str):
-            user_input = UserInput(query=input_data)
-        elif isinstance(input_data, dict):
-            if "query" in input_data:
-                user_input = UserInput(**input_data)
-            elif "messages" in input_data and input_data["messages"]:
-                msgs = input_data["messages"]
-                formatted_msgs = []
-                last_user_content = ""
-                for msg in msgs:
-                    if isinstance(msg, dict):
-                        role = msg.get("role", "user")
-                        content = msg.get("content", str(msg))
-                    else:
-                        role = "user" if isinstance(msg, HumanMessage) else "assistant"
-                        content = getattr(msg, "content", str(msg))
-                    formatted_msgs.append({"role": role, "content": str(content)})
-                    if role == "user":
-                        last_user_content = str(content)
-                user_input = UserInput(query=last_user_content or "User request")
-                payload = {"messages": formatted_msgs}
-                return user_input, payload
-            else:
-                user_input = UserInput(query=str(input_data))
-        else:
-            user_input = UserInput(query=str(input_data))
-
-        parts = [f"User Request: {user_input.query}"]
-        if user_input.requirements:
-            parts.append(f"Requirements: {user_input.requirements}")
-        if user_input.framework:
-            parts.append(f"Framework: {user_input.framework}")
-        if user_input.language:
-            parts.append(f"Language: {user_input.language}")
-        if user_input.database:
-            parts.append(f"Database: {user_input.database}")
-        content_str = "\n".join(parts)
-        payload = {"messages": [{"role": "user", "content": content_str}]}
-        return user_input, payload
+        """Normalize input data into a UserInput schema and a graph state dict using schema methods."""
+        user_input = UserInput.from_input(input_data)
+        if isinstance(input_data, dict) and "messages" in input_data and input_data["messages"]:
+            formatted_msgs = []
+            for msg in input_data["messages"]:
+                if isinstance(msg, dict):
+                    formatted_msgs.append({"role": msg.get("role", "user"), "content": str(msg.get("content", str(msg)))})
+                else:
+                    role = "user" if isinstance(msg, HumanMessage) else "assistant"
+                    formatted_msgs.append({"role": role, "content": str(getattr(msg, "content", str(msg)))})
+            return user_input, {"messages": formatted_msgs}
+        return user_input, user_input.to_payload()
 
     def _extract_final_answer(self, messages: list) -> str:
         """Extract the text content of the last AI message."""
@@ -129,39 +99,8 @@ class EngineeringStack:
         return ""
 
     def _extract_ai_output(self, messages: list) -> AIOutput:
-        """Parse execution output messages into structured AIOutput format."""
-        final_text = self._extract_final_answer(messages)
-
-        code_blocks = re.findall(r"```(?:\w+)?\n(.*?)```", final_text, re.DOTALL)
-        if code_blocks:
-            code_content = "\n\n".join(cb.strip() for cb in code_blocks)
-        else:
-            code_content = final_text.strip()
-
-        bullets: list[str] = []
-        for line in final_text.splitlines():
-            line_str = line.strip()
-            if line_str.startswith(("-", "*", "•")) or (
-                re.match(r"^\d+\.", line_str) and len(line_str) > 3
-            ):
-                cleaned = re.sub(r"^[\-\*\•\d\.]+\s*", "", line_str).strip()
-                if cleaned and cleaned not in bullets:
-                    bullets.append(cleaned)
-
-        fallback_bullets = [
-            "Parsed and extracted UserInput specification.",
-            "Routed task through Main Agent and specialized Manager.",
-            "Delegated execution to requested domain specialist.",
-            "Generated implementation code adhering to requirements.",
-            "Finalized engineering solution output.",
-        ]
-
-        if len(bullets) < 5:
-            bullets.extend(fallback_bullets[len(bullets) : 5])
-        elif len(bullets) > 5:
-            bullets = bullets[:5]
-
-        return AIOutput(summary=bullets, code=code_content)
+        """Parse execution output messages into structured AIOutput schema format."""
+        return AIOutput.from_messages(messages)
 
     def invoke(
         self,

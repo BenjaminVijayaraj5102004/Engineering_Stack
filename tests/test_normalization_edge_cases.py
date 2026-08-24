@@ -173,11 +173,11 @@ class TestNormalizationEdgeCases(unittest.TestCase):
         self.assertIsInstance(output, AIOutput)
         self.assertIn("CREATE TABLE users", output.code)
         self.assertIn("@app.get('/users')", output.code)
-        self.assertEqual(len(output.summary), 5)
+        self.assertEqual(len(output.summary), 2)
         self.assertIn("Designed database table", output.summary[0])
 
-    def test_extract_ai_output_padding_fallback_bullets(self):
-        """Arrange-Act-Assert: Summaries with fewer than 5 points are padded to 5."""
+    def test_extract_ai_output_single_bullet(self):
+        """Arrange-Act-Assert: Single bullet point is extracted dynamically without fallback padding."""
         # Arrange
         text = (
             "```python\ndef test(): pass\n```\n"
@@ -189,12 +189,11 @@ class TestNormalizationEdgeCases(unittest.TestCase):
         output = self.stack._extract_ai_output(messages)
 
         # Assert
-        self.assertEqual(len(output.summary), 5)
+        self.assertEqual(len(output.summary), 1)
         self.assertEqual(output.summary[0], "Only one bullet point provided")
-        self.assertEqual(output.summary[1], "Routed task through Main Agent and specialized Manager.")
 
-    def test_extract_ai_output_truncation_when_exceeding_5(self):
-        """Arrange-Act-Assert: Summaries with more than 5 points are truncated to 5."""
+    def test_extract_ai_output_preserves_all_generated_points(self):
+        """Arrange-Act-Assert: All generated points are extracted dynamically."""
         # Arrange
         text = (
             "```python\nx = 1\n```\n"
@@ -212,11 +211,12 @@ class TestNormalizationEdgeCases(unittest.TestCase):
         output = self.stack._extract_ai_output(messages)
 
         # Assert
-        self.assertEqual(len(output.summary), 5)
+        self.assertEqual(len(output.summary), 7)
         self.assertEqual(output.summary[4], "Fifth step")
+        self.assertEqual(output.summary[6], "Seventh step")
 
     def test_extract_ai_output_empty_messages(self):
-        """Arrange-Act-Assert: Empty message list returns default empty code and 5 fallback summary points."""
+        """Arrange-Act-Assert: Empty message list returns empty code and empty summary list."""
         # Arrange
         messages = []
 
@@ -225,7 +225,7 @@ class TestNormalizationEdgeCases(unittest.TestCase):
 
         # Assert
         self.assertEqual(output.code, "")
-        self.assertEqual(len(output.summary), 5)
+        self.assertEqual(output.summary, [])
 
 
 if __name__ == "__main__":

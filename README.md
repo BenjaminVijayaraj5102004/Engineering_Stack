@@ -22,6 +22,7 @@ version: 0.1.7
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Contributing](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Code of Conduct](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![Views](https://komarev.com/ghpvc/?username=BenjaminVijayaraj5102004&color=blue&style=flat)](https://github.com/antonkomarev/github-profile-views-counter)
 
 **EngineeringStack** is a hierarchical multi-agent engineering framework built on top of LangGraph.
 
