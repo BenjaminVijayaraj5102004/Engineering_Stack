@@ -275,8 +275,9 @@ def get_domain_tools(
     from .mcp_tools import get_domain_mcp_tools
 
     base_tools: list[Any] = [search_code, get_file_contents, meniscus_recall]
-    if domain in ("coding", "helper"):
+    if domain in ("coding", "helper", "custom", "mcp"):
         base_tools.append(meniscus_log)
+
 
     domain_mcp_tools = get_domain_mcp_tools(domain)
     all_tools = list(base_tools) + list(domain_mcp_tools)

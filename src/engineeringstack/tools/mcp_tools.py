@@ -132,7 +132,7 @@ def list_mcp_tools(server: str) -> str:
     """Connect to an MCP server and list all available tools provided by the server.
     
     Args:
-        server: Server name (e.g. 'postgres', 'github', 'meniscus') or direct URL.
+        server: Server name (e.g. 'supabase', 'postgres', 'github', 'meniscus') or direct URL.
     """
     logger.info("[TOOL] list_mcp_tools called for server=%s", server)
 
@@ -156,16 +156,6 @@ def list_mcp_tools(server: str) -> str:
     except Exception as exc:
         logger.warning("[TOOL] list_mcp_tools failed for server '%s': %s", server, exc)
         err_msg = str(exc)
-        if "getaddrinfo failed" in err_msg or "ConnectError" in err_msg:
-            return (
-                f"Registered MCP server '{server}' in configuration, but could not connect to endpoint "
-                f"(host unreachable or DNS lookup failed: {err_msg}). Please check the endpoint URL."
-            )
-        elif "Timeout" in err_msg or "timed out" in err_msg or isinstance(exc, asyncio.TimeoutError):
-            return (
-                f"Registered MCP server '{server}', but connection timed out after 10s. "
-                f"The server may be starting up or currently unreachable."
-            )
         return f"Unable to retrieve tools from MCP server '{server}': {err_msg}"
 
 
@@ -209,6 +199,39 @@ def remove_mcp_server(name: str, persist: Union[bool, str] = True) -> str:
     except Exception as exc:
         logger.error("[TOOL] remove_mcp_server error: %s", exc)
         return f"Failed to remove MCP server '{name}': {exc}"
+
+
+@tool
+@traceable(name="call_mcp_tool", run_type="tool")
+def call_mcp_tool(
+    server: str,
+    tool_name: str,
+    arguments: Optional[Union[dict[str, Any], str]] = None,
+) -> str:
+    """Execute a specific tool provided by a registered MCP server.
+    
+    Args:
+        server: Unique name of the registered MCP server (e.g. 'supabase', 'postgres', 'weather', 'github', 'meniscus') or URL.
+        tool_name: Name of the tool on the MCP server to invoke (e.g. 'list_projects', 'execute_sql').
+        arguments: Optional dictionary of arguments or JSON string to pass to the tool.
+    """
+    resolved_args = _parse_dict(arguments) if isinstance(arguments, (str, dict)) else {}
+    if not isinstance(resolved_args, dict):
+        resolved_args = {}
+
+    logger.info("[TOOL] call_mcp_tool called: server=%s, tool=%s, args=%s", server, tool_name, resolved_args)
+
+    async def _invoke():
+        async with get_mcp_client(server, timeout=10.0) as session:
+            res = await session.call_tool(tool_name, resolved_args)
+            return _extract_mcp_result_text(res)
+
+    try:
+        return _run_async_safely(asyncio.wait_for(_invoke(), timeout=30.0))
+    except Exception as exc:
+        logger.warning("[TOOL] call_mcp_tool error for '%s' on server '%s': %s", tool_name, server, exc)
+        return f"[MCP {server} {tool_name} error: {exc}]"
+
 
 
 def create_dynamic_mcp_tool(
@@ -291,23 +314,14 @@ async def discover_and_adapt_mcp_tools(
 
 
 def load_server_tools(server_name: str) -> List[StructuredTool]:
-    """Connect to a registered MCP server and dynamically discover its tools as LangChain StructuredTools."""
-    async def _fetch():
-        async with get_mcp_client(server_name, timeout=5.0) as session:
-            return await discover_and_adapt_mcp_tools(session, server_name=server_name)
-
-    try:
-        return _run_async_safely(asyncio.wait_for(_fetch(), timeout=8.0))
-    except Exception as exc:
-        logger.warning("Could not dynamically load tools for MCP server '%s': %s", server_name, exc)
-        # Return fallback dynamic execute tool for this server
-        return [
-            create_dynamic_mcp_tool(
-                tool_name="execute",
-                description=f"Execute query or operation against MCP server '{server_name}'.",
-                server_name=server_name,
-            )
-        ]
+    """Provide on-demand LangChain StructuredTools for a registered MCP server."""
+    return [
+        create_dynamic_mcp_tool(
+            tool_name="execute",
+            description=f"Execute query or operation against MCP server '{server_name}'.",
+            server_name=server_name,
+        )
+    ]
 
 
 def get_domain_mcp_tools(domain: str) -> List[StructuredTool]:

@@ -33,11 +33,17 @@ User Request (MCP URL / Package) → Credential Check (Human Interrupt if missin
    - Instantiate `MultiServerMCPClient(server_configs)`.
 3. **Discover Tools**:
    - Invoke `tools = await client.get_tools()` to dynamically extract all LangChain-compatible tool definitions across registered MCP servers.
-4. **Domain Classification & Attachment**:
-   - SQL / RDBMS (`postgres`, `mysql`, `sqlite`) → attach tools to `RDBMS_agent`.
-   - Document Stores (`mongo`, `dynamo`, `nosql`) → attach tools to `NoSQL_agent`.
-   - REST / Web APIs (`rest`, `openapi`, `swagger`) → attach tools to `REST_Agent`.
-   - New / Custom domains (`figma`, `slack`, `filesystem`) → provision a neutral subagent specification with `create_deep_agent`.
+4. **Domain Classification & Delegation**:
+   - SQL / RDBMS (`postgres`, `mysql`, `sqlite`) → delegate to `RDBMS_agent`.
+   - Document Stores (`mongo`, `dynamo`, `nosql`) → delegate to `NoSQL_agent`.
+   - Key-Value Stores (`redis`, `valkey`) → delegate to `REDIS_agent`.
+   - REST / Web APIs (`rest`, `openapi`, `swagger`) → delegate to `REST_Agent`.
+   - GraphQL APIs (`graphql`, `gql`) → delegate to `GraphQL_Agent`.
+   - gRPC APIs (`grpc`, `protobuf`) → delegate to `GRPC_Agent`.
+   - SOAP APIs (`soap`, `wsdl`) → delegate to `SOAP_Agent`.
+   - Git / Code Repositories (`github`, `git`) → delegate to `Coding_Agent`.
+   - New / Custom domains (`figma`, `slack`, `weather`, `filesystem`) → delegate to `MCP_Subagent` (in `agents/mcp_agents/mcp_subagent.py`) or execute via `call_mcp_tool`.
+
 
 ---
 

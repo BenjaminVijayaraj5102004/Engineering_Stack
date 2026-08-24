@@ -29,7 +29,7 @@ Step 2: INTENT EVALUATION & RESPONSE
     -> Call `task` with `subagent_type="Database_Manager"` and a concise single-line description.
   * Full API Architecture (multi-service APIs, complete backend protocols):
     -> Call `task` with `subagent_type="API_Manager"` and a concise single-line description.
-  * Custom MCP Server Integration (MCP configs, tools, templates):
+  * Custom MCP Server Integration & MCP Queries (MCP configs, tools, templates, Supabase/GitHub/DB MCP tool operations):
     -> Call `task` with `subagent_type="MCP_Manager"` and a concise single-line description.
 
 Step 3: RESULT RELAY

@@ -13,6 +13,7 @@ from .tools import (
 from .mcp_tools import (
     register_mcp_server,
     list_mcp_tools,
+    call_mcp_tool,
     list_registered_mcp_servers,
     remove_mcp_server,
     create_dynamic_mcp_tool,
@@ -32,6 +33,7 @@ __all__ = [
     "get_domain_tools",
     "register_mcp_server",
     "list_mcp_tools",
+    "call_mcp_tool",
     "list_registered_mcp_servers",
     "remove_mcp_server",
     "create_dynamic_mcp_tool",
@@ -39,3 +41,4 @@ __all__ = [
     "load_server_tools",
     "get_domain_mcp_tools",
 ]
+

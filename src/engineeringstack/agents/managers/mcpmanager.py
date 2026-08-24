@@ -16,7 +16,7 @@ def mcp_manager_subagent(
     logger.info("Initializing MCP Manager")
     return {
         "name": "MCP_Manager",
-        "description": "Provisions and configures custom MCP (Model Context Protocol) servers, generating config JSON, client modules, MCP tool wrappers, and dedicated subagents via write_file.",
+        "description": "Provisions and configures custom MCP (Model Context Protocol) servers, executes tools via call_mcp_tool, and delegates tool calling to respective domain subagents or MCP_Subagent.",
         "system_prompt": MCP_MANAGER_SYSTEM_PROMPT,
         "runnable": build_mcp_manager(
             model=model,

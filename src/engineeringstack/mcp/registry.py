@@ -28,15 +28,17 @@ def _expand_env_vars(value: Any) -> Any:
 
         def replace_match(match):
             var_name = match.group(1)
-            # Try settings first, then os.environ
-            if hasattr(settings, var_name) and getattr(settings, var_name):
-                return str(getattr(settings, var_name))
+            # 1. Check os.environ first (runtime environment overrides)
             val = os.getenv(var_name)
-            if val is not None:
+            if val is not None and val != "":
                 return val
-            if var_name == "github_mcp_pat" or var_name == "GITHUB_ACCESS_TOKEN":
-                return getattr(settings, "GITHUB_ACCESS_TOKEN", "") or "dummy_token"
-            return match.group(0)
+            # 2. Check dynamic settings from .env
+            if hasattr(settings, var_name):
+                s_val = getattr(settings, var_name)
+                if s_val is not None and str(s_val) != "":
+                    return str(s_val)
+            # 3. If unset, return empty string to prevent corrupted auth headers/urls
+            return ""
 
         expanded = pattern.sub(replace_match, value)
         return os.path.expandvars(expanded)
@@ -209,7 +211,7 @@ class MCPRegistry:
         """Classify the agent domain for routing based on server and tool metadata."""
         text = f"{server_name} {' '.join(tool_names or [])} {description or ''}".lower()
 
-        if any(k in text for k in ["postgres", "mysql", "sqlite", "oracle", "sql", "rdbms", "mariadb"]):
+        if any(k in text for k in ["postgres", "mysql", "sqlite", "oracle", "sql", "rdbms", "mariadb", "supabase"]):
             return "rdbms"
         if any(k in text for k in ["mongo", "dynamo", "couch", "cassandra", "nosql"]):
             return "nosql"
